@@ -19,7 +19,9 @@
 
 enum MODULES {
   ColorsModule,
-  MotorModule
+  MotorModule,
+  LinesModule,
+  DistanceModule
 };
 
 extern enum MODULES Modules;
@@ -32,6 +34,7 @@ enum ROBOT_STATES {
   SeekLineState,
   FollowLineState,
   CoinState,
+  PushButtonState,
   MoleState,
   EndState
 };

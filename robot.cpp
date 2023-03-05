@@ -12,11 +12,11 @@ Robot::~Robot() {
 }
 
 bool Robot::initialize() {
-  setState(InitializeState);
   logger->log("%d modules identified...", moduleCount);
 
   for(int i = 0; i < moduleCount; i++) {
     if(!modules[i]->initialize()) {
+      logger->log("Initialization failed on module %d", i);
       return false;
     }
 
@@ -25,24 +25,19 @@ bool Robot::initialize() {
 }
 
 bool Robot::systemsCheck() {
-  setState(SystemsCheckState);
-
   logger->log("Running systems check on identified modules...");
 
   for(int i = 0; i < moduleCount; i++) {
     if(!modules[i]->systemsCheck()) {
+      logger->log("System module check failed on module %i", i);
       return false;
     }
 
     logger->log("Successfully checked module %i", i);
   }
-
-  setState(IdleState);
 }
 
 void Robot::addModule(RobotModule *module, int index) {
-  setState(InitializeState);
-
   logger->log("Adding module: %s", module->name);
 
   assert(moduleCount <= ROBOT_MAX_MODULES);

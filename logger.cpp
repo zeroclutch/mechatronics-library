@@ -10,11 +10,11 @@ Logger::~Logger() {
 }
 
 void Logger::dump(void) {
-    #if DEBUG_ROBOT == 1
+    if(isDebugMode) { 
         if(Serial && !logSerial) {
             Serial.print(output);
         }
-    #endif
+    }
 }
 
 char* Logger::getTime(void) {
