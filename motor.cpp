@@ -99,15 +99,12 @@ void Motor::setPins(uint8_t enA, uint8_t in1, uint8_t in2, uint8_t enB, uint8_t 
     assert(in3 != in4);
   }
 
-  if(DEBUG_ROBOT) Serial.print("Setting pins. ");
-  if(DEBUG_ROBOT) Serial.print("State = ");
-  if(DEBUG_ROBOT) Serial.println(currentState);
+  logger->log("Setting pins.\nState = %d", currentState);
 
   /** LEFT WHEEL **/
 
   // Turn off enable momentarily so we don't accidentally brake during switching
-  if(DEBUG_ROBOT) Serial.print("enA value: ");
-  if(DEBUG_ROBOT) Serial.println(getPWMValue(enA));
+  logger->log("enA value: %d", getPWMValue(enA));
 
   digitalWrite(pinIN1, in1);
   digitalWrite(pinIN2, in2);
@@ -118,8 +115,7 @@ void Motor::setPins(uint8_t enA, uint8_t in1, uint8_t in2, uint8_t enB, uint8_t 
   /** RIGHT WHEEL **/
 
   // Turn off enable momentarily so we don't accidentally brake during switching
-  if(DEBUG_ROBOT) Serial.print("enB value: ");
-  if(DEBUG_ROBOT) Serial.println(getPWMValue(enB));
+  logger->log("enB value: %d", getPWMValue(enB));
 
   digitalWrite(pinIN3, in3);
   digitalWrite(pinIN4, in4);
@@ -147,21 +143,15 @@ double Motor::getDistance() {
 }
 
 void Motor::printDistance() {
-  Serial.print("Distance travelled (cm): ");
-  Serial.println(getDistance() * 100);
-
-  Serial.print("Speed (cm/s): ");
-  Serial.println(getDistance() * 100 / 2.0);
-
-  if(DEBUG_ROBOT) Serial.print("\nCounter: ");
-  if(DEBUG_ROBOT) Serial.println(counter);
+  logger->log("Distance travelled (cm): %f", getDistance() * 100);
+  logger->log("Speed (cm/s): %f", getDistance() * 100 / 2.0);
+  logger->log("Counter: %d", counter);
 }
 
 void Motor::printPins() {
-  Serial.print("Current pin states are: ");
+  logger->log("Current pin states are: ");
   for(int i = 0; i < SWITCH_COUNT; i++) {
-    Serial.print(digitalRead(switchPins[i]));
-    Serial.print(", ");
+    logger->log("pin %d: %d", switchPins[i], digitalRead(switchPins[i]));
   }
 }
 
@@ -219,13 +209,7 @@ void Motor::move() {
   else if(digitalRead(switchPins[3]) == HIGH) currentSpeed = 0.25;
 
   if(previousState != currentState || previousSpeed != currentSpeed) {
-    if(DEBUG_ROBOT) {
-        Serial.print("Changing state! Previous state: ");
-        Serial.print(previousState);
-        Serial.print(", Current State: ");
-        Serial.println(currentState);
-    }
-
+    logger->log("Changing state! Previous state: %d, Current state: %d", previousState, currentState); 
     // Set pin values
     setAllPins();
   }

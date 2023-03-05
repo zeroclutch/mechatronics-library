@@ -28,7 +28,7 @@ enum ROBOT_STATES {
   InitializeState,
   SystemsCheckState,
   IdleState,
-  CalibratingState,
+  CalibrateState,
   SeekLineState,
   FollowLineState,
   CoinState,
@@ -53,6 +53,7 @@ class Robot: public RobotModule {
     void addModule(RobotModule *module, int index);
 
     void setState(int state);
+    int getState();
 };
 
 #endif

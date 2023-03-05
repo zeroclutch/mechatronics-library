@@ -11,11 +11,6 @@ Robot::~Robot() {
   free(modules);
 }
 
-void Robot::setState(int newState) {
-  logger->log("Changing state from %d to %d", state, newState);
-  state = newState;
-}
-
 bool Robot::initialize() {
   setState(InitializeState);
   logger->log("%d modules identified...", moduleCount);
@@ -57,4 +52,13 @@ void Robot::addModule(RobotModule *module, int index) {
 
   modules[index] = module;
   moduleCount++;
+}
+
+void Robot::setState(int newState) {
+  logger->log("Changing state from %d to %d", state, newState);
+  state = newState;
+}
+
+int Robot::getState() {
+  return state;
 }

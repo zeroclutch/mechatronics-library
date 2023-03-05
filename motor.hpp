@@ -6,10 +6,6 @@
 #include "module.hpp"
 #endif
 
-#ifndef DEBUG_ROBOT
-#define DEBUG_ROBOT 0
-#endif
-
 #ifndef SWITCH_COUNT
 #define SWITCH_COUNT 4
 #endif

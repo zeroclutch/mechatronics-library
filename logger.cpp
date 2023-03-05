@@ -1,6 +1,7 @@
 #include "logger.hpp"
 
-Logger::Logger(bool enableSerial) {
+Logger::Logger(bool isDebugMode, bool enableSerial) {
+    this->isDebugMode = isDebugMode;
     this->logSerial = enableSerial;
 }
 
