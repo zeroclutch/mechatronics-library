@@ -34,7 +34,7 @@ class Logger {
                     return;
                 }
 
-                int sn = snprintf(s, size + 1, format, args... ); 
+                sprintf(s, format, args... ); 
                 char* time = getTime();
 
                 if(Serial && logSerial) {

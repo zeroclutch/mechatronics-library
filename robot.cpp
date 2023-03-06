@@ -12,36 +12,44 @@ Robot::~Robot() {
 }
 
 bool Robot::initialize() {
-  logger->log("%d modules identified...", moduleCount);
+  logger->log("[robot] %d modules identified...", moduleCount);
 
   for(int i = 0; i < moduleCount; i++) {
+    if(modules[i] == NULL) continue;
+
     if(!modules[i]->initialize()) {
-      logger->log("Initialization failed on module %d", i);
+      logger->log("[robot] Initialization failed on module %s", modules[i]->name);
       return false;
     }
 
-    logger->log("Successfully initialized module %d", i);
+    logger->log("[robot] Successfully initialized module %s", modules[i]->name);
   }
+  return true;
 }
 
 bool Robot::systemsCheck() {
-  logger->log("Running systems check on identified modules...");
+  logger->log("[robot] Running systems check on identified modules...");
 
   for(int i = 0; i < moduleCount; i++) {
+    if(modules[i] == NULL) continue;
+
     if(!modules[i]->systemsCheck()) {
-      logger->log("System module check failed on module %i", i);
+      logger->log("[robot] System module check failed on module %s", modules[i]->name);
       return false;
     }
 
-    logger->log("Successfully checked module %i", i);
+    logger->log("[robot] Successfully checked module %s", modules[i]->name);
   }
+  return true;
 }
 
 void Robot::addModule(RobotModule *module, int index) {
-  logger->log("Adding module: %s", module->name);
+  logger->log("[robot] Adding module: %s", module->name);
 
-  assert(moduleCount <= ROBOT_MAX_MODULES);
-  assert(index <= ROBOT_MAX_MODULES);
+  if(index >= ROBOT_MAX_MODULES) {
+    logger->log("[robot] Module index out of bounds: %d", index);
+    return;
+  }
 
   module->attachLogger(logger);
 
@@ -50,7 +58,7 @@ void Robot::addModule(RobotModule *module, int index) {
 }
 
 void Robot::setState(int newState) {
-  logger->log("Changing state from %d to %d", state, newState);
+  logger->log("[robot] Changing state from %d to %d", state, newState);
   state = newState;
 }
 

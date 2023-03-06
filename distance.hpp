@@ -2,13 +2,15 @@
 #include "module.hpp"
 #endif
 
+#ifndef Arduino_h
+#include "Arduino.h"
+#endif
+
 #ifndef DISTANCE_H
 #define DISTANCE_H
 
 #define MAX_ANALOG_READ 613
-#define DISTANCE_SENSOR_PIN A1
 #define SAMPLE_COUNT 20
-
 
 // Sorted list of input/output pairs
 const float dataPoints[][2] = {
@@ -52,7 +54,7 @@ const float dataPoints[][2] = {
     {0.751,38},
     {0.722,39},
     {0.692,40},
-    {NULL, NULL}
+    {-1, -1}
 };
 
 class Distance: public RobotModule {

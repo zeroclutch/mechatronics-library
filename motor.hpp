@@ -19,6 +19,11 @@
 #include <stdint.h>
 #include "timeouts.h"
 
+typedef struct MOTOR_SPEED {
+  float left;
+  float right;
+} MotorSpeed;
+
 enum STATES {
   FORWARD     = 0,
   REVERSE     = 1,
@@ -30,6 +35,11 @@ enum STATES {
   PIVOT_RIGHT = 7,
 
   LENGTH = 8
+};
+
+enum WHEELS {
+  WHEEL_LEFT,
+  WHEEL_RIGHT
 };
 
 class Motor: public RobotModule {
@@ -50,8 +60,8 @@ class Motor: public RobotModule {
     int previousState;
     int currentState;
 
-    float currentSpeed;
-    float previousSpeed;
+    MotorSpeed* currentSpeed;
+    MotorSpeed* previousSpeed;
 
     // Internal variables
     int counter = 0;
@@ -67,20 +77,27 @@ class Motor: public RobotModule {
     void setPins(uint8_t enA, uint8_t in1, uint8_t in2, uint8_t enB, uint8_t in3, uint8_t in4, int state);
     void setAllPins();
 
-    int getPWMValue(uint8_t isEnabled);
+    bool isZero(float speed);
+    bool isZero(float speed, float precision);
+    float clampSpeed(float speed);
 
+    void updatePreviousSpeed();
+    void handleSpeedChange();
+    int getPWMValue(uint8_t isEnabled, uint8_t wheel);
+
+    int speedToInt(float speed);
     void printDistance();
     void printPins();
     void startCounting();
 
     void forward()    { currentState = FORWARD;     }
     void reverse()    { currentState = REVERSE;     }
-    void brake()      { currentState = BRAKE;       }
     void coast()      { currentState = COAST;       }
     void turnLeft()   { currentState = TURN_LEFT;   }
     void turnRight()  { currentState = TURN_RIGHT;  }
     void pivotLeft()  { currentState = PIVOT_LEFT;  }
     void pivotRight() { currentState = PIVOT_RIGHT; }
+
 
   public:
     Motor(
@@ -95,18 +112,27 @@ class Motor: public RobotModule {
         uint8_t switch_count,
         uint8_t *switchPins
     );
+    ~Motor();
+
     bool initialize();
     bool systemsCheck();
 
     // Actions
+    // This should be called in loop() continuously. It only updates the state.
     void move();
 
-    // Setters
-    void setSpeed(double speed);
+    // Sets the wheel speed
+    void setSpeed(float left, float right);
+    void setSpeed(MotorSpeed* speed);
+    
+    // Sets the wheels to brake until the next setSpeed() call
+    void brake() { currentState = BRAKE; }
+
+    MotorSpeed* calculateSpeeds(MotorSpeed* dest, float averageSpeed, float angle);
 
     // Getters
     double getDistance();
-    double getSpeed();
+    MotorSpeed* getSpeed();
 };
 
 #endif

@@ -11,14 +11,12 @@
 class RobotModule {
 public:
 
-    char* name;
+    char* name = "";
     Logger *logger;
 
     void attachLogger(Logger *logger) {
         this->logger = logger;
-        #ifdef DEBUG_ROBOT
-            logger->log("Attached logger to module: %s", name);
-        #endif
+        logger->log("[module] Attached logger to module: %s", name);
     }
 
     // Initialize the module. This will be called in the setup() function

@@ -75,7 +75,7 @@ Colors::Colors(int red, int green, int blue, int white, int photo, bool isDebug,
   photo_pin = photo;
   debug = isDebug;
   calibration_mode = isCalibration;
-  
+
   name = "Colors";
 }
 

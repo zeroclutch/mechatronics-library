@@ -18,7 +18,12 @@ void Logger::dump(void) {
 }
 
 char* Logger::getTime(void) {
-    char* s = (char*) malloc(10);
-    sprintf(s, "[%lu] ", millis() );
+    int size = snprintf(nullptr, 0, "[%lu] ", millis() );
+    if (size < 0) {
+        return nullptr;
+    }
+
+    char* s = (char*) malloc(size + 1);
+    snprintf(s, size + 1, "[%lu] ", millis() );
     return s;
 }

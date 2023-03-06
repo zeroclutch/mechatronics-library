@@ -19,13 +19,13 @@ you press the pushbutton. Report the distance to the nearest 1mm when possible.
 DEMO #1 – show the TA that this program works.
 */
 Distance::Distance(int distanceSensorPin) {
-    //this->distanceSensorPin = distanceSensorPin;
+    this->distanceSensorPin = distanceSensorPin;
     name = "Distance";
 };
 
 bool Distance::initialize() {
   // Configure pins
-  //pinMode(distanceSensorPin, INPUT);
+    pinMode(distanceSensorPin, INPUT);
 
   return true;
 }
@@ -47,7 +47,7 @@ bool Distance::systemsCheck() {
 float Distance::calculateDistance(float voltage) {
   // Implement piecewise linear function
   int i = 0;
-  while(dataPoints[i][0] != NULL) {
+  while(dataPoints[i][0] > 0) {
     // See if next value is larger
     if(voltage > dataPoints[i + 1][0]) {
       // Calculate value
