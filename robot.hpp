@@ -28,7 +28,6 @@ extern enum MODULES Modules;
 
 enum ROBOT_STATES {
   InitializeState,
-  SystemsCheckState,
   IdleState,
   CalibrateState,
   SeekLineState,
@@ -45,7 +44,7 @@ class Robot: public RobotModule {
   private:
     RobotModule *modules[ROBOT_MAX_MODULES];
     int moduleCount = 0;
-    int state;
+    int state = 0;
 
   public:
     Robot();

@@ -10,7 +10,7 @@
 
 class Logger {
     private:
-        String output;
+        char* output;
 
         bool isDebugMode;
         bool logSerial;
@@ -42,9 +42,14 @@ class Logger {
                         Serial.print(s);
                         Serial.println();
                 } else {
-                        output += time;
-                        output += s;
-                        output += "\n";
+                        char* temp = (char*) realloc(output, strlen(output) + strlen(s) + strlen(time) + sizeof(char) + 1);
+                        if(temp) {
+                            output = temp;
+                            
+                            strcat(output, time);
+                            strcat(output, s);
+                            strcat(output, "\n");
+                        }
                 }
 
                 free(s);

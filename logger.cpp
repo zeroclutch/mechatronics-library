@@ -13,6 +13,9 @@ void Logger::dump(void) {
     if(isDebugMode) { 
         if(Serial && !logSerial) {
             Serial.print(output);
+            free(output);
+            output = (char*) malloc(sizeof(char) + 1);
+            output[0] = '\0';
         }
     }
 }

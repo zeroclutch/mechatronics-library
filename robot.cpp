@@ -4,6 +4,7 @@
 
 Robot::Robot() {
   moduleCount = 0;
+  state = InitializeState;
   name = "Robot";
 }
 
