@@ -1,12 +1,18 @@
 #include "lines.hpp"
 
-Lines::Lines() {
+QTRSensors qtr;
+
+const uint8_t SensorCount = 6;
+uint16_t sensorValues[SensorCount];
+
+Lines::Lines(const uint8_t *pins) {
     name = "Lines";
 
     // configure the sensors
     qtr.setTypeAnalog();
-    qtr.setSensorPins((const uint8_t[]){A0, A1, A2, A3, A4, A5}, SensorCount);
-    qtr.setEmitterPin(2);}
+    qtr.setSensorPins(pins, SensorCount);
+    qtr.setEmitterPin(2);
+}
 
 bool Lines::initialize() {
     return true;
@@ -17,7 +23,7 @@ bool Lines::systemsCheck() {
     return true;
 }
 
-bool Lines::calibrateWhite() {
+bool Lines::calibrate() {
     // analogRead() takes about 0.1 ms on an AVR.
   // 0.1 ms per sensor * 4 samples per sensor read (default) * 6 sensors
   // * 10 reads per calibrate() call = ~24 ms per calibrate() call.
@@ -50,12 +56,7 @@ bool Lines::calibrateWhite() {
   return true;
 }
 
-bool Lines::calibrateBlack() {
-    logger->log("[lines] Calibrating black...");
-    return true;
-}
-
-void cool_function_action()
+void Lines::read()
 {
   // read calibrated sensor values and obtain a measure of the line position
   // from 0 to 5000 (for a white line, use readLineWhite() instead)

@@ -13,7 +13,8 @@ uint8_t pinStates[LENGTH][PIN_COUNT] = {
 };
 
 // Counter and distance 
-volatile long counter = 0;
+volatile long leftCounter = 0;
+volatile long rightCounter = 0;
 
 const float countsPerRotation = 886.0;
 const float circumference = 0.1885;
@@ -23,11 +24,19 @@ volatile unsigned long lastChannelATime = 0;
 volatile unsigned long lastChannelBTime = 0;
 volatile unsigned long currChannelATime = 0;
 
+volatile unsigned long lastChannelCTime = 0;
+volatile unsigned long lastChannelDTime = 0;
+volatile unsigned long currChannelCTime = 0;
+
 volatile bool started = false;
 
 // Non-interrupt functions
-double getDistance() {
-  return (double) counter / countsPerRotation * circumference;
+double getLeftDistance() {
+  return (double) leftCounter / countsPerRotation * circumference;
+}
+
+double getRightDistance() {
+  return (double) rightCounter / countsPerRotation * circumference;
 }
 
 // Interrupts
@@ -40,21 +49,48 @@ void readChannelA() {
  long d1 = currChannelATime - lastChannelBTime;
  if(started) {
   if(d1 > d2) {
-    counter--;
+    leftCounter--;
   } else {
-    counter++;
+    leftCounter++;
   }
  }
 
  lastChannelATime = currChannelATime;
 
  // Update stored distance value
- totalDistance = getDistance();
+ totalDistance = getLeftDistance();
 
 }
 
 void readChannelB() {
  lastChannelBTime = millis();
+}
+
+// Interrupts
+void readChannelC() {
+ currChannelCTime = millis();
+ // Check whether B's pulse was closer to this pulse or the last one.
+ // If it is closer to this pulse, we are moving from B to A
+ // If it is closer to the last pulse, we are millis() - lastChannelBTime moving from A to B
+ long d2 = lastChannelDTime - lastChannelCTime;
+ long d1 = currChannelCTime - lastChannelDTime;
+ if(started) {
+  if(d1 > d2) {
+    rightCounter--;
+  } else {
+    rightCounter++;
+  }
+ }
+
+ lastChannelCTime = currChannelCTime;
+
+ // Update stored distance value
+ totalDistance = getRightDistance();
+
+}
+
+void readChannelD() {
+ lastChannelDTime = millis();
 }
 
 // Class methods
@@ -67,6 +103,8 @@ Motor::Motor(
     uint8_t pin_IN4,
     uint8_t CHANNEL_A,
     uint8_t CHANNEL_B,
+    uint8_t CHANNEL_C,
+    uint8_t CHANNEL_D,
     uint8_t switch_count,
     uint8_t *switchPins
 ) {
@@ -78,6 +116,8 @@ Motor::Motor(
     pinIN4 = pin_IN4;
     channelA = CHANNEL_A;
     channelB = CHANNEL_B;
+    channelC = CHANNEL_C;
+    channelD = CHANNEL_D;
     switchCount = switch_count;
     switchPins = switchPins;
 
@@ -159,13 +199,19 @@ int Motor::getPWMValue(uint8_t isEnabled, uint8_t wheel) {
   }
 }
 
-double Motor::getDistance() {
-  return (double) counter / countsPerRotation * circumference;
+
+double Motor::getLeftDistance() {
+  return (double) leftCounter / countsPerRotation * circumference;
 }
 
+double Motor::getRightDistance() {
+  return (double) rightCounter / countsPerRotation * circumference;
+}
+
+
 void Motor::printDistance() {
-  logger->log("[motor] Distance travelled (cm): %f", getDistance() * 100);
-  logger->log("[motor] Speed (cm/s): %f", getDistance() * 100 / 2.0);
+  logger->log("[motor] Distance travelled (cm): %f", getRightDistance() * 100);
+  logger->log("[motor] Speed (cm/s): %f", getRightDistance() * 100 / 2.0);
   logger->log("[motor] Counter: %d", counter);
 }
 
@@ -192,6 +238,8 @@ bool Motor::initialize() {
   // Configure inputs for distance
   pinMode(channelA, INPUT);
   pinMode(channelB, INPUT);
+  pinMode(channelC, INPUT);
+  pinMode(channelD, INPUT);
   
   for(int i = 0; i < switchCount; i++) {
     pinMode(switchPins[i], INPUT);
@@ -200,6 +248,10 @@ bool Motor::initialize() {
   // Configure interrupts
   attachInterrupt(channelA, readChannelA, CHANGE);
   attachInterrupt(channelB, readChannelB, CHANGE);
+
+  // Right wheel (check this)
+  attachInterrupt(channelC, readChannelC, CHANGE);
+  attachInterrupt(channelD, readChannelD, CHANGE);
   
   return true;
 }
@@ -298,6 +350,8 @@ void Motor::move() {
     previousSpeed->left != currentSpeed->left ||
     previousSpeed->right != currentSpeed->right
   );
+
+  // TODO: Use distance to adjust the speed of the motors
 
   if(stateOrSpeedChange) {
     logger->log("[motor] Changing state! Previous state: %d, Current state: %d", previousState, currentState); 

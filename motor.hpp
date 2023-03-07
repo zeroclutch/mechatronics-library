@@ -53,6 +53,8 @@ class Motor: public RobotModule {
     uint8_t pinIN4;
     uint8_t channelA;
     uint8_t channelB;
+    uint8_t channelC;
+    uint8_t channelD;
     uint8_t switchCount;
     uint8_t *switchPins;
 
@@ -98,7 +100,6 @@ class Motor: public RobotModule {
     void pivotLeft()  { currentState = PIVOT_LEFT;  }
     void pivotRight() { currentState = PIVOT_RIGHT; }
 
-
   public:
     Motor(
         uint8_t pin_ENA,
@@ -109,6 +110,8 @@ class Motor: public RobotModule {
         uint8_t pin_IN4,
         uint8_t CHANNEL_A,
         uint8_t CHANNEL_B,
+        uint8_t CHANNEL_C,
+        uint8_t CHANNEL_D,
         uint8_t switch_count,
         uint8_t *switchPins
     );
@@ -131,7 +134,8 @@ class Motor: public RobotModule {
     MotorSpeed* calculateSpeeds(MotorSpeed* dest, float averageSpeed, float angle);
 
     // Getters
-    double getDistance();
+    double getLeftDistance();
+    double getRightDistance();
     MotorSpeed* getSpeed();
 };
 

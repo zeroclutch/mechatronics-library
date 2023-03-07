@@ -41,6 +41,8 @@ bool Robot::systemsCheck() {
 
     logger->log("[robot] Successfully checked module %s", modules[i]->name);
   }
+
+  logger->log("[robot] Systems check completed successfully!");
   return true;
 }
 

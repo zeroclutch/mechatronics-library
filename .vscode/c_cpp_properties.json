@@ -5,7 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "~/Documents/Arduino/hardware/sparkfun/esp8266/**",
-                "~/Documents/Arduino/libraries/**"
+                "~/Documents/Arduino/libraries/**",
+                "~/Documents/Arduino/libraries/QTRSensors"
             ],
             "defines": [],
             "macFrameworkPath": [

@@ -9,21 +9,17 @@
 #ifndef LINES_H
 #define LINES_H
 
-#include "../QTRSensors/QTRSensors.h"
-QTRSensors qtr;
-
-const uint8_t SensorCount = 6;
-uint16_t sensorValues[SensorCount];
+#include <QTRSensors.h>
 
 class Lines: public RobotModule {
     private:
     public:
-        Lines();
+        Lines(const uint8_t *pins);
         bool initialize();
         bool systemsCheck();
 
-        bool calibrateWhite();
-        bool calibrateBlack();
+        bool calibrate();
+        void read();
 };
 
 #endif
