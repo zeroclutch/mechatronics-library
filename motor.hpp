@@ -65,7 +65,11 @@ class Motor: public RobotModule {
     MotorSpeed* currentSpeed;
     MotorSpeed* previousSpeed;
 
+    MotorSpeed* targetSpeed;
+
     // Internal variables
+    const speedChangeRate = 0.1;
+
     int counter = 0;
     int lastChannelATime = 0;
     int lastChannelBTime = 0;
@@ -124,8 +128,11 @@ class Motor: public RobotModule {
     // This should be called in loop() continuously. It only updates the state.
     void move();
 
-    // Sets the wheel speed
-    void setSpeed(float left, float right);
+    // Sets the target wheel speed
+    void setTargetSpeed(float left, float right);
+    void setTargetSpeed(MotorSpeed* speed);
+
+    // Sets true wheel speed
     void setSpeed(MotorSpeed* speed);
     
     // Sets the wheels to brake until the next setSpeed() call
@@ -136,6 +143,7 @@ class Motor: public RobotModule {
     // Getters
     double getLeftDistance();
     double getRightDistance();
+    MotorSpeed* getSpeed();
     MotorSpeed* getSpeed();
 };
 

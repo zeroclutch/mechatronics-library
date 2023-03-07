@@ -312,13 +312,18 @@ void Motor::handleSpeedChange() {
 }
 
 void Motor::setSpeed(MotorSpeed* speed) {
+  targetSpeed->right = clampSpeed(speed->right);
+  targetSpeed->left = clampSpeed(speed->left);
+}
+
+void Motor::setTargetSpeed(MotorSpeed* speed) {
   currentSpeed->right = clampSpeed(speed->right);
   currentSpeed->left = clampSpeed(speed->left);
 
   handleSpeedChange();
 }
 
-void Motor::setSpeed(float left, float right) {
+void Motor::setTargetSpeed(float left, float right) {
   currentSpeed->right = clampSpeed(right);
   currentSpeed->left = clampSpeed(left);
 
@@ -351,13 +356,18 @@ void Motor::move() {
     previousSpeed->right != currentSpeed->right
   );
 
-  // TODO: Use distance to adjust the speed of the motors
-
   if(stateOrSpeedChange) {
     logger->log("[motor] Changing state! Previous state: %d, Current state: %d", previousState, currentState); 
     // Set pin values
     setAllPins();
   }
+
+  // Update speed to target speed
+  float rightDelta = currentSpeed->right - targetSpeed->right;
+  if(!isZero(rightDelta)) currentSpeed->right += copysign(speedChangeRate, rightDelta);
+
+  float leftDelta = currentSpeed->left - targetSpeed->left;
+  if(!isZero(leftDelta)) currentSpeed->left += copysign(speedChangeRate, leftDelta);
 
   // Only update previous state after checking
   previousState = currentState;
