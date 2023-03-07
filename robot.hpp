@@ -30,6 +30,8 @@ enum ROBOT_STATES {
   InitializeState,
   IdleState,
   CalibrateState,
+  CalibrateWhite, 
+  CalibrateBlack,
   SeekLineState,
   FollowLineState,
   CoinState,

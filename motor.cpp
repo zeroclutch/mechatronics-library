@@ -140,12 +140,12 @@ void Motor::setPins(uint8_t enA, uint8_t in1, uint8_t in2, uint8_t enB, uint8_t 
 
 void Motor::setAllPins() {
   setPins(pinStates[currentState][0],
-            pinStates[currentState][1],
-            pinStates[currentState][2],
-            pinStates[currentState][3],
-            pinStates[currentState][4],
-            pinStates[currentState][5],
-            currentState);
+          pinStates[currentState][1],
+          pinStates[currentState][2],
+          pinStates[currentState][3],
+          pinStates[currentState][4],
+          pinStates[currentState][5],
+          currentState);
 }
 
 int Motor::getPWMValue(uint8_t isEnabled, uint8_t wheel) {
@@ -213,7 +213,7 @@ bool Motor::systemsCheck() {
       return false;
     }
 
-    logger->log("[motor] Speeds set to %d\%, %d\%", speedToInt(currentSpeed->right), speedToInt(currentSpeed->left));
+    logger->log("[motor] Speeds set to %d%, %d%", speedToInt(currentSpeed->right), speedToInt(currentSpeed->left));
 
     setSpeed(0.0, 0.0);
     move();
@@ -254,7 +254,7 @@ void Motor::handleSpeedChange() {
   else if(currentSpeed->right < 0     && currentSpeed->left > 0)     pivotLeft();
   else if(currentSpeed->right > 0     && currentSpeed->left < 0)     pivotRight();
   else {
-    logger->log("[motor] Invalid speed combination: %d\%, %d\%", speedToInt(currentSpeed->right), speedToInt(currentSpeed->left));
+    logger->log("[motor] Invalid speed combination: %d%, %d%", speedToInt(currentSpeed->right), speedToInt(currentSpeed->left));
     coast();
   }
 }
