@@ -68,7 +68,7 @@ class Motor: public RobotModule {
     MotorSpeed* targetSpeed;
 
     // Internal variables
-    const speedChangeRate = 0.1;
+    int speedChangeRate = 0.01;
 
     int counter = 0;
     int lastChannelATime = 0;
@@ -144,7 +144,7 @@ class Motor: public RobotModule {
     double getLeftDistance();
     double getRightDistance();
     MotorSpeed* getSpeed();
-    MotorSpeed* getSpeed();
+    MotorSpeed* getTargetSpeed();
 };
 
 #endif

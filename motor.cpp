@@ -257,20 +257,19 @@ bool Motor::initialize() {
 }
 
 bool Motor::systemsCheck() {
-    setSpeed(0.5, 0.5);
+    setTargetSpeed(0.5, 0.5);
     move();
-    MotorSpeed* current = getSpeed();
-    if(!isZero(currentSpeed->left - 0.5) || !isZero(currentSpeed->right - 0.5)) {
+    if(!isZero(targetSpeed->left - 0.5) || !isZero(targetSpeed->right - 0.5)) {
       logger->log("[motor] Speeds not set correctly.");
       return false;
     }
 
-    logger->log("[motor] Speeds set to %d%, %d%", speedToInt(currentSpeed->right), speedToInt(currentSpeed->left));
+    logger->log("[motor] Speeds set to %d%, %d%", speedToInt(targetSpeed->right), speedToInt(targetSpeed->left));
 
-    setSpeed(0.0, 0.0);
-    move();
-    current = getSpeed();
-    if(!isZero(current->left) || !isZero(current->right)) {
+    for(int i = 0; i < (int) (0.5/speedChangeRate); i++) {
+      move();
+    }
+    if(!isZero(currentSpeed->left - 0.5) || !isZero(currentSpeed->right - 0.5)) {
       logger->log("[motor] Speeds not set correctly");
       return false;
     }
