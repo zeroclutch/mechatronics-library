@@ -66,24 +66,14 @@ class Motor: public RobotModule {
     int previousState;
     int currentState;
 
-    MotorSpeed* currentSpeed;
-    MotorSpeed* previousSpeed;
-
-    MotorSpeed* targetSpeed;
-
     // Internal variables
-    float speedChangeRate = 0.005;  // 1% per tick
+    float speedChangeRate = 0.01;  // 1% per tick
     const int wheelbase = 218; // 218mm
 
-    int counter = 0;
-    int lastChannelATime = 0;
-    int lastChannelBTime = 0;
-    int currChannelATime = 0;
-    int currChannelBTime = 0;
-    int countsPerRotation = 20;
-    double circumference = 0.0635;
-    double totalDistance = 0;
     bool started = false;
+
+    unsigned long lastSpeedUpdate = 0;
+    const unsigned int SPEED_UPDATE_INTERVAL = 10000; // 10ms
 
     void setPins(uint8_t enA, uint8_t in1, uint8_t in2, uint8_t enB, uint8_t in3, uint8_t in4, int state);
     void setAllPins();
@@ -125,6 +115,10 @@ class Motor: public RobotModule {
         uint8_t *switchPins
     );
     ~Motor();
+
+    MotorSpeed* currentSpeed;
+    MotorSpeed* previousSpeed;
+    MotorSpeed* targetSpeed;
 
     bool initialize();
     bool systemsCheck();
