@@ -15,6 +15,16 @@ Lines::Lines(uint8_t emitterPin, const uint8_t *pins) {
 }
 
 bool Lines::initialize() {
+
+    qtr.calibrate();
+
+    // configure the calibration
+    for(uint8_t i = 0; i < SensorCount; i++)
+    {
+        qtr.calibrationOn.minimum[i] =  500;
+        qtr.calibrationOn.maximum[i] = 2500;
+    }
+    
     return true;
 }
 
@@ -58,9 +68,25 @@ uint16_t Lines::read()
   // read raw sensor values
   uint16_t value = qtr.readLineBlack(sensorValues);
 
+//     // read calibrated sensor values
+//     qtr.read(sensorValues);
+
+//     int sum = 0;
+//     int divisor = 0;
+
+//   for(int i = 0; i < SensorCount; i++) {
+//     int reading = sensorValues[i];
+//     sum += (1000 * i) * (reading - calibrationMin);
+//     divisor += calibrationMax - calibrationMin;
+//     logger->log("[lines] Sensor %d: %d", i, reading);
+//   }
+
+//   int value = sum / divisor;
+
   // print the sensor values as numbers from 0 to 1023, where 0 means maximum
   // reflectance and 1023 means minimum reflectance
   logger->log("[lines] The readValue is %d", value);
 
+  lastValue = value;
   return value;
 }

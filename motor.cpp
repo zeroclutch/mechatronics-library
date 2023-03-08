@@ -2,14 +2,14 @@
 
 uint8_t pinStates[LENGTH][PIN_COUNT] = {
   //ENA,IN1,IN2,ENB,IN3,IN4
-  {   1,  1,  0,  1,  1,  0}, // FORWARD
-  {   1,  0,  1,  1,  0,  1}, // REVERSE
+  {   1,  0,  1,  1,  0,  1}, // FORWARD
+  {   1,  1,  0,  1,  1,  0}, // REVERSE
   {   1,  1,  1,  1,  1,  1}, // BRAKE
-  {   0,  1,  0,  0,  1,  0}, // COAST
-  {   1,  1,  0,  0,  1,  0}, // TURN_LEFT
-  {   0,  1,  0,  1,  1,  0}, // TURN_RIGHT
-  {   1,  1,  0,  1,  0,  1}, // PIVOT_LEFT
-  {   1,  0,  1,  1,  1,  0}  // PIVOT_RIGHT
+  {   0,  0,  1,  0,  0,  1}, // COAST
+  {   1,  0,  1,  0,  0,  1}, // TURN_LEFT
+  {   0,  0,  1,  1,  0,  1}, // TURN_RIGHT
+  {   1,  0,  1,  1,  1,  0}, // PIVOT_LEFT
+  {   1,  1,  0,  1,  0,  1}  // PIVOT_RIGHT
 };
 
 // Counter and distance 
@@ -115,47 +115,47 @@ void updateSpeeds() {
 
 // Class methods
 Motor::Motor(
-    uint8_t pin_ENA,
-    uint8_t pin_IN1,
-    uint8_t pin_IN2,
-    uint8_t pin_ENB,
-    uint8_t pin_IN3,
-    uint8_t pin_IN4,
-    uint8_t CHANNEL_A,
-    uint8_t CHANNEL_B,
-    uint8_t CHANNEL_C,
-    uint8_t CHANNEL_D,
-    uint8_t switch_count,
-    uint8_t *switchPins
+  uint8_t pin_ENA,
+  uint8_t pin_IN1,
+  uint8_t pin_IN2,
+  uint8_t pin_ENB,
+  uint8_t pin_IN3,
+  uint8_t pin_IN4,
+  uint8_t CHANNEL_A,
+  uint8_t CHANNEL_B,
+  uint8_t CHANNEL_C,
+  uint8_t CHANNEL_D,
+  uint8_t switch_count,
+  uint8_t *switchPins
 ) {
-    pinENA = pin_ENA;
-    pinIN1 = pin_IN1;
-    pinIN2 = pin_IN2;
-    pinENB = pin_ENB;
-    pinIN3 = pin_IN3;
-    pinIN4 = pin_IN4;
-    channelA = CHANNEL_A;
-    channelB = CHANNEL_B;
-    channelC = CHANNEL_C;
-    channelD = CHANNEL_D;
-    switchCount = switch_count;
-    switchPins = switchPins;
+  pinENA = pin_ENA;
+  pinIN1 = pin_IN1;
+  pinIN2 = pin_IN2;
+  pinENB = pin_ENB;
+  pinIN3 = pin_IN3;
+  pinIN4 = pin_IN4;
+  channelA = CHANNEL_A;
+  channelB = CHANNEL_B;
+  channelC = CHANNEL_C;
+  channelD = CHANNEL_D;
+  switchCount = switch_count;
+  switchPins = switchPins;
 
-    previousState = BRAKE;
-    currentState = BRAKE;
+  previousState = BRAKE;
+  currentState = BRAKE;
 
-    currentSpeed = (MotorSpeed*) malloc(sizeof(MotorSpeed));
-    currentSpeed->right = 0;
-    currentSpeed->left = 0;
+  currentSpeed = (MotorSpeed*) malloc(sizeof(MotorSpeed));
+  currentSpeed->right = 0;
+  currentSpeed->left = 0;
 
-    targetSpeed = (MotorSpeed*) malloc(sizeof(MotorSpeed));
-    targetSpeed->right = 0;
-    targetSpeed->left = 0;
+  targetSpeed = (MotorSpeed*) malloc(sizeof(MotorSpeed));
+  targetSpeed->right = 0;
+  targetSpeed->left = 0;
 
-    previousSpeed = (MotorSpeed*) malloc(sizeof(MotorSpeed));
-    updatePreviousSpeed();
+  previousSpeed = (MotorSpeed*) malloc(sizeof(MotorSpeed));
+  updatePreviousSpeed();
 
-    name = "Motor";
+  name = "Motor";
 }
 
 Motor::~Motor() {
@@ -336,6 +336,11 @@ void Motor::setSpeed(MotorSpeed* speed) {
   currentSpeed->left = clampSpeed(speed->left);
 }
 
+void Motor::setSpeed(float left, float right) {
+  currentSpeed->right = clampSpeed(left);
+  currentSpeed->left = clampSpeed(right);
+}
+
 void Motor::setTargetSpeed(MotorSpeed* speed) {
   targetSpeed->right = clampSpeed(speed->right);
   targetSpeed->left = clampSpeed(speed->left);
@@ -383,6 +388,7 @@ MotorSpeed* Motor::calculateSpeeds(MotorSpeed* dest, float averageSpeed, float a
 }
 
 void Motor::move() {
+  handleSpeedChange();
   bool stateOrSpeedChange = (
     previousState != currentState ||
     previousSpeed->left != currentSpeed->left ||
@@ -401,25 +407,23 @@ void Motor::move() {
   // We can only do this if the currentSpeed has converged to the targetSpeed
   bool hasConverged = isZero(currentSpeed->right - targetSpeed->right, 0.001) && isZero(currentSpeed->left - targetSpeed->left, 0.001);
   logger->log("[motor] Converged: %d", hasConverged);
-  if(hasConverged) {
-    if(!isZero(currentSpeed->left) && !isZero(getTrueLeftSpeed())) {
-      float trueRatio = getTrueRightSpeed() / getTrueLeftSpeed();
-      float expectedRatio = currentSpeed->right / currentSpeed->left;
-       
-      if(isZero(trueRatio - expectedRatio, 0.01)) {
-      // If the true ratio is close enough to the expected ratio, do nothing
-      } else if(trueRatio > expectedRatio) {
-      // If right wheel is faster than expected, speed up left wheel
-        targetSpeed->left = currentSpeed->right / trueRatio;
-      } else {
-      // If left wheel is faster than expected, slow down left wheel
-        targetSpeed->left = currentSpeed->right * trueRatio;
-      }
+  if(hasConverged && !isZero(currentSpeed->left) && !isZero(getTrueLeftSpeed()) && !isZero(currentSpeed->right) && !isZero(getTrueRightSpeed())) {
+    float trueRatio = getTrueRightSpeed() / getTrueLeftSpeed();
+    float expectedRatio = currentSpeed->right / currentSpeed->left;
+      
+    if(isZero(trueRatio - expectedRatio, 0.01)) {
+    // If the true ratio is close enough to the expected ratio, do nothing
+    } else if(trueRatio > expectedRatio) {
+    // If right wheel is faster than expected, speed up left wheel
+      targetSpeed->left = currentSpeed->right / trueRatio;
+    } else {
+    // If left wheel is faster than expected, slow down right wheel
+      targetSpeed->left = currentSpeed->right * trueRatio;
     }
     logger->log("[motor] True speed: %d%, %d%", speedToInt(getTrueRightSpeed()), speedToInt(getTrueLeftSpeed()));
     logger->log("[motor] Target speed: %d%, %d%", speedToInt(targetSpeed->right), speedToInt(targetSpeed->left));
   }
-
+  
   // Update speed every SPEED_CHECK_INTERVAL - 1% every 2ms = 100% every 500ms
   if(micros() - lastSpeedUpdate > SPEED_UPDATE_INTERVAL) {
     logger->log("[motor] Interpolating speed after %luus", micros() - lastSpeedUpdate);
@@ -431,10 +435,13 @@ void Motor::move() {
     float leftDelta = targetSpeed->left - currentSpeed->left;
     if(!isZero(leftDelta)) currentSpeed->left += copysign(speedChangeRate, leftDelta);
     if(leftDelta < speedChangeRate) currentSpeed->left = targetSpeed->left;
-
+     
     // Update last speed update time
     lastSpeedUpdate = micros();
   }
+
+  currentSpeed->left = targetSpeed->left;
+  currentSpeed->right = targetSpeed->right;
 
   // Only update previous state after checking
   previousState = currentState;
