@@ -13,13 +13,14 @@
 
 class Lines: public RobotModule {
     private:
+        uint8_t emitterPin;
     public:
-        Lines(const uint8_t *pins);
+        Lines(uint8_t emitterPin, const uint8_t *pins);
         bool initialize();
         bool systemsCheck();
 
         bool calibrate();
-        void read();
+        uint16_t read();
 };
 
 #endif

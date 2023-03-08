@@ -266,7 +266,7 @@ bool Motor::systemsCheck() {
 
     logger->log("[motor] Speeds set to %d%, %d%", speedToInt(targetSpeed->right), speedToInt(targetSpeed->left));
 
-    for(int i = 0; i < (int) (0.5/speedChangeRate); i++) {
+    for(int i = 0; i < 50; i++) {
       move();
     }
     if(!isZero(currentSpeed->left - 0.5) || !isZero(currentSpeed->right - 0.5)) {
@@ -288,7 +288,7 @@ float Motor::clampSpeed(float speed) {
 }
 
 bool Motor::isZero(float speed) {
-  return fabs(speed) < 0.001;
+  return fabs(speed) < 0.0001;
 }
 
 bool Motor::isZero(float speed, float precision) {
@@ -367,6 +367,9 @@ void Motor::move() {
 
   float leftDelta = currentSpeed->left - targetSpeed->left;
   if(!isZero(leftDelta)) currentSpeed->left += copysign(speedChangeRate, leftDelta);
+
+  // Correct speed based on counter readings
+
 
   // Only update previous state after checking
   previousState = currentState;

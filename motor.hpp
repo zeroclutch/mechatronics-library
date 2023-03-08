@@ -68,7 +68,8 @@ class Motor: public RobotModule {
     MotorSpeed* targetSpeed;
 
     // Internal variables
-    int speedChangeRate = 0.01;
+    float speedChangeRate = 0.01;  // 1% per tick
+    const int wheelbase = 218; // 218mm
 
     int counter = 0;
     int lastChannelATime = 0;
