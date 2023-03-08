@@ -6,6 +6,10 @@
 #include "module.hpp"
 #endif
 
+#ifndef TimerOne_h_
+#include "TimerOne.h"
+#endif
+
 #ifndef SWITCH_COUNT
 #define SWITCH_COUNT 4
 #endif
@@ -68,7 +72,7 @@ class Motor: public RobotModule {
     MotorSpeed* targetSpeed;
 
     // Internal variables
-    float speedChangeRate = 0.01;  // 1% per tick
+    float speedChangeRate = 0.005;  // 1% per tick
     const int wheelbase = 218; // 218mm
 
     int counter = 0;
@@ -146,6 +150,9 @@ class Motor: public RobotModule {
     double getRightDistance();
     MotorSpeed* getSpeed();
     MotorSpeed* getTargetSpeed();
+
+    float getTrueLeftSpeed();
+    float getTrueRightSpeed();
 };
 
 #endif

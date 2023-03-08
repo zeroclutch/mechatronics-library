@@ -20,6 +20,13 @@ const float countsPerRotation = 886.0;
 const float circumference = 0.1885;
 volatile int totalDistance = 0;
 
+const int SPEED_CHECK_INTERVAL = 10000; // 10ms
+volatile float lastLeftDistance = 0;
+volatile float lastRightDistance = 0;
+
+volatile float leftSpeed = 0;
+volatile float rightSpeed = 0;
+
 volatile unsigned long lastChannelATime = 0;
 volatile unsigned long lastChannelBTime = 0;
 volatile unsigned long currChannelATime = 0;
@@ -59,7 +66,6 @@ void readChannelA() {
 
  // Update stored distance value
  totalDistance = getLeftDistance();
-
 }
 
 void readChannelB() {
@@ -86,11 +92,25 @@ void readChannelC() {
 
  // Update stored distance value
  totalDistance = getRightDistance();
-
 }
 
 void readChannelD() {
  lastChannelDTime = millis();
+}
+
+void updateLeftSpeed() {
+  // Get the distance travelled since the last time we checked
+  leftSpeed = (getLeftDistance() - lastLeftDistance) / SPEED_CHECK_INTERVAL * 1000;
+}
+
+void updateRightSpeed() {
+  // Get the distance travelled since the last time we checked
+  rightSpeed = (getRightDistance() - lastRightDistance) / SPEED_CHECK_INTERVAL * 1000;
+}
+
+void updateSpeeds() {
+  updateLeftSpeed();
+  updateRightSpeed();
 }
 
 // Class methods
@@ -253,6 +273,9 @@ bool Motor::initialize() {
   attachInterrupt(channelC, readChannelC, CHANGE);
   attachInterrupt(channelD, readChannelD, CHANGE);
   
+  Timer1.initialize(SPEED_CHECK_INTERVAL);
+  Timer1.attachInterrupt(updateSpeeds);
+  
   return true;
 }
 
@@ -327,6 +350,28 @@ void Motor::setTargetSpeed(float left, float right) {
   currentSpeed->left = clampSpeed(left);
 
   handleSpeedChange();
+}
+
+void Motor::interpolateSpeed() {
+  float leftDiff = targetSpeed->left - currentSpeed->left;
+  float rightDiff = targetSpeed->right - currentSpeed->right;
+
+  if(!isZero(leftDiff)) {
+    currentSpeed->left += leftDiff > 0 ? speedChangeRate : -speedChangeRate;
+  }
+
+  if(!isZero(rightDiff)) {
+    currentSpeed->right += rightDiff > 0 ? speedChangeRate : -speedChangeRate;
+  }
+}
+
+// Returns the calculated speed in meters per second
+float Motor::getTrueLeftSpeed() {
+  return leftSpeed;
+}
+
+float Motor::getTrueRightSpeed() {
+  return rightSpeed;
 }
 
 MotorSpeed* Motor::getSpeed() {
