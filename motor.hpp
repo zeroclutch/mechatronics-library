@@ -148,6 +148,8 @@ class Motor: public RobotModule {
 
     float getTrueLeftSpeed();
     float getTrueRightSpeed();
+
+    float maintainDistance(float cm, float speed);
 };
 
 #endif

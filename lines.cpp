@@ -63,6 +63,18 @@ bool Lines::calibrate() {
   return true;
 }
 
+bool hasLine() {
+  qtr.read(sensorValues);
+
+  for(uint8_t i = 0; i < SensorCount; i++) {
+    if(sensorValues[i] > 1000) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 uint16_t Lines::read()
 {
   // read raw sensor values

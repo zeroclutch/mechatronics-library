@@ -18,7 +18,6 @@ volatile long rightCounter = 0;
 
 const float countsPerRotation = 886.0;
 const float circumference = 0.1885;
-volatile int totalDistance = 0;
 
 const int SPEED_CHECK_INTERVAL = 2000; // 2ms
 volatile float lastLeftDistance = 0;
@@ -48,54 +47,44 @@ double getRightDistance() {
 
 // Interrupts
 void readChannelA() {
- currChannelATime = millis();
- // Check whether B's pulse was closer to this pulse or the last one.
- // If it is closer to this pulse, we are moving from B to A
- // If it is closer to the last pulse, we are millis() - lastChannelBTime moving from A to B
- long d2 = lastChannelBTime - lastChannelATime;
- long d1 = currChannelATime - lastChannelBTime;
- if(started) {
+  currChannelATime = micros();
+  // Check whether B's pulse was closer to this pulse or the last one.
+  // If it is closer to this pulse, we are moving from B to A
+  // If it is closer to the last pulse, we are millis() - lastChannelBTime moving from A to B
+  long d2 = lastChannelBTime - lastChannelATime;
+  long d1 = currChannelATime - lastChannelBTime;
   if(d1 > d2) {
     leftCounter--;
   } else {
     leftCounter++;
   }
- }
 
  lastChannelATime = currChannelATime;
-
- // Update stored distance value
- totalDistance = getLeftDistance();
 }
 
 void readChannelB() {
- lastChannelBTime = millis();
+  lastChannelBTime = micros();
 }
 
 // Interrupts
 void readChannelC() {
- currChannelCTime = millis();
- // Check whether B's pulse was closer to this pulse or the last one.
- // If it is closer to this pulse, we are moving from B to A
- // If it is closer to the last pulse, we are millis() - lastChannelBTime moving from A to B
- long d2 = lastChannelDTime - lastChannelCTime;
- long d1 = currChannelCTime - lastChannelDTime;
- if(started) {
+  currChannelCTime = micros();
+  // Check whether B's pulse was closer to this pulse or the last one.
+  // If it is closer to this pulse, we are moving from B to A
+  // If it is closer to the last pulse, we are millis() - lastChannelBTime moving from A to B
+  long d2 = lastChannelDTime - lastChannelCTime;
+  long d1 = currChannelCTime - lastChannelDTime;
   if(d1 > d2) {
     rightCounter--;
   } else {
     rightCounter++;
   }
- }
 
- lastChannelCTime = currChannelCTime;
-
- // Update stored distance value
- totalDistance = getRightDistance();
+  lastChannelCTime = currChannelCTime;
 }
 
 void readChannelD() {
- lastChannelDTime = millis();
+ lastChannelDTime = micros();
 }
 
 void updateLeftSpeed() {
@@ -264,12 +253,12 @@ bool Motor::initialize() {
   }
 
   // Configure interrupts
-  attachInterrupt(channelA, readChannelA, CHANGE);
-  attachInterrupt(channelB, readChannelB, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(channelA), readChannelA, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(channelB), readChannelB, CHANGE);
 
   // Right wheel (check this)
-  attachInterrupt(channelC, readChannelC, CHANGE);
-  attachInterrupt(channelD, readChannelD, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(channelC), readChannelC, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(channelD), readChannelD, CHANGE);
   
   Timer1.initialize(SPEED_CHECK_INTERVAL);
   Timer1.attachInterrupt(updateSpeeds);
@@ -423,6 +412,8 @@ void Motor::move() {
     logger->log("[motor] True speed: %d%, %d%", speedToInt(getTrueRightSpeed()), speedToInt(getTrueLeftSpeed()));
     logger->log("[motor] Target speed: %d%, %d%", speedToInt(targetSpeed->right), speedToInt(targetSpeed->left));
   }
+
+  logger->log("[motor] Current distance: LEFT: %d, RIGHT %d", leftCounter, rightCounter);
   
   // Update speed every SPEED_CHECK_INTERVAL - 1% every 2ms = 100% every 500ms
   if(micros() - lastSpeedUpdate > SPEED_UPDATE_INTERVAL) {

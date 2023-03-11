@@ -22,8 +22,12 @@ class Lines: public RobotModule {
         Lines(uint8_t emitterPin, const uint8_t *pins);
         bool initialize();
         bool systemsCheck();
+        
+        bool isLineVisible = false;
 
         bool calibrate();
+
+        bool hasLine();
         uint16_t read();
 };
 
