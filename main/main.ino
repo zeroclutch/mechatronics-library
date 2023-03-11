@@ -1,5 +1,5 @@
-#define DEBUG_ROBOT 1
-#define PERFORM_SYSTEMS_CHECK 1
+#define DEBUG_ROBOT 0
+#define PERFORM_SYSTEMS_CHECK 0
 
 // Setting this to 0 will mean we only log when logger.dump() is called
 #define DEBUG_TO_SERIAL 1
@@ -133,6 +133,7 @@ void loop() {
   } else if(robotState ==  IdleState) {
     motor.setTargetSpeed(0,0);
     motor.move();
+    robot.setState(MoleState);
     
     // Flush logger buffer
     if(Serial.available() != 0) {
@@ -191,7 +192,21 @@ void loop() {
     
   } else if (robotState ==  MoleState) {
     distance.updateDistance();
-    distance.logDistance(); 
+    float cm = distance.getDistance();
+    logger.log("mm: %d", (int) (cm * 10));
+    if(cm > 0) {
+      motor.followWall(
+        10,  // targetDistance
+        cm,  // currentDistance
+        45,  // turning radius
+        0.3, // average speed
+        1    // correction factor
+      )
+    } else {
+      motor.setTargetSpeed(0,0);
+    }
+
+    motor.move();
   } else {
     Serial.println("end/default state");
     logger.dump();

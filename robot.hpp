@@ -40,7 +40,18 @@ enum ROBOT_STATES {
   EndState
 };
 
+enum ARENA_ITEMS {
+  MoleGreen,
+  MoleBlue,
+  MoleWhite,
+  RedButton,
+  MoleRed,
+  MolePurple,
+  MoleYellow
+};
+
 extern enum ROBOT_STATES RobotStates;
+extern enum ARENA_ITEMS ArenaItems;
 
 class Robot: public RobotModule {
   private:

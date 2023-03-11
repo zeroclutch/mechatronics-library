@@ -69,6 +69,7 @@ class Motor: public RobotModule {
     // Internal variables
     float speedChangeRate = 0.01;  // 1% per tick
     const int wheelbase = 218; // 218mm
+    const float wheelbaseMeters = 0.218; // 218mm
 
     bool started = false;
 
@@ -127,6 +128,9 @@ class Motor: public RobotModule {
     // This should be called in loop() continuously. It only updates the state.
     void move();
 
+    // Reset the distance counters
+    void resetCounters();
+
     // Sets the target wheel speed
     void setTargetSpeed(float left, float right);
     void setTargetSpeed(MotorSpeed* speed);
@@ -149,7 +153,8 @@ class Motor: public RobotModule {
     float getTrueLeftSpeed();
     float getTrueRightSpeed();
 
-    float maintainDistance(float cm, float speed);
+    float followWall(float targetDistance, float currentDistance, float radius, float averageSpeed, float correctionFactor);
+
 };
 
 #endif

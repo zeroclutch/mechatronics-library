@@ -66,6 +66,7 @@ DEMO #1 – show the TA that this program works.
 Distance::Distance(int distanceSensorPin) {
     this->distanceSensorPin = distanceSensorPin;
     name = "Distance";
+    outOfRange = false;
 };
 
 bool Distance::initialize() {
@@ -80,6 +81,7 @@ bool Distance::systemsCheck() {
   int value = readValue();
   float voltage = voltageFromValue(value);
   float distance = calculateDistance(voltage);
+  logger->log("got distance.");
 
   if(distance < 0) {
     logger->log("Distance sensor is not working.");
@@ -104,11 +106,15 @@ float Distance::calculateDistance(float voltage) {
       // Point-slope form y = y0 + m(x - x0)
       return y0 + (y1-y0)/(x1-x0) * (voltage - x0);
     }
+    i++;
   }
   return -1;
 }
 
 float Distance::voltageFromValue(int value) {
+  if(value < 0) {
+    return -1;
+  }
   return value * 5.0 / 1023.0;
 }
 
@@ -118,6 +124,13 @@ int Distance::readValue() {
 }
 
 void Distance::logSample(int value) {
+  // Check if sample is valid
+  if(value < 0) {
+    outOfRange = true;
+  } else {
+    outOfRange = false;
+  }
+
   samples[sampleIndex] = value;
   sampleIndex = (sampleIndex + 1) % SAMPLE_COUNT;
 }
@@ -131,7 +144,7 @@ int Distance::averageSample() {
     if(samples[i] == NULL && i != 0) {
       return samples[i - 1];
     } else if (samples[i] == NULL) {
-      return MAX_ANALOG_READ / 2;
+      return -1;
     }
   }
   return sum/SAMPLE_COUNT;
@@ -145,11 +158,21 @@ void Distance::updateDistance() {
 void Distance::logDistance() {
     int value = averageSample();
     float voltage = voltageFromValue(value);
+    float distance = calculateDistance(voltage);
 
-    logger->log("[distance] Raw value: %d, Voltage %f", value);
-    logger->log("[distance] The distance is approximately: %f cm.", calculateDistance(voltage));
+    logger->log("[distance] Raw value: %d", value);
+    if(distance < 0) {
+      logger->log("[distance] Distance is out of range.");
+      return;
+    } else {
+      logger->log("[distance] The distance is approximately: %d mm.", (int) (distance * 10));
+    }
 }
 
 float Distance::getDistance() {
-    return calculateDistance(averageSample());
+  if(outOfRange) {
+    return -1;
+  } else {
+    return calculateDistance(voltageFromValue(averageSample()));
+  }
 }

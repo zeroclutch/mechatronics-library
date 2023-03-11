@@ -216,6 +216,10 @@ double Motor::getRightDistance() {
   return (double) rightCounter / countsPerRotation * circumference;
 }
 
+void Motor::resetCounters() {
+  leftCounter = 0;
+  rightCounter = 0;
+}
 
 void Motor::printDistance() {
   logger->log("[motor] Distance travelled (cm): %f", getRightDistance() * 100);
@@ -374,6 +378,18 @@ MotorSpeed* Motor::calculateSpeeds(MotorSpeed* dest, float averageSpeed, float a
   dest->left = averageSpeed + angle;
   dest->right = averageSpeed - angle;
   return dest;
+}
+
+Motor::followWall(float targetDistance, float currentDistance, float radius, float averageSpeed, float correctionFactor) {
+  float left = averageSpeed;
+  float right = averageSpeed * (radius - wheelbaseMeters) / radius; // TODO: compute this as constant 
+  
+  // If error is positive, we are too close to the wall and need to turn more
+  // If error is negative, we are too far from the wall and need to turn less
+  float error = (targetDistance - currentDistance) / targetDistance;
+  float angle = error * correctionFactor;
+
+  setTargetSpeed(left + angle, right - angle);
 }
 
 void Motor::move() {

@@ -10,7 +10,7 @@
 #define DISTANCE_H
 
 #define MAX_ANALOG_READ 613
-#define SAMPLE_COUNT 20
+#define SAMPLE_COUNT 5
 
 class Distance: public RobotModule {
 private:
@@ -33,6 +33,8 @@ private:
 
     bool initialize();
     bool systemsCheck();
+
+    bool outOfRange = false;
 
     void updateDistance();
     void logDistance();
