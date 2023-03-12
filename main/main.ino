@@ -1,5 +1,5 @@
-#define DEBUG_ROBOT 0
-#define PERFORM_SYSTEMS_CHECK 0
+#define DEBUG_ROBOT 1
+#define PERFORM_SYSTEMS_CHECK 1
 
 // Setting this to 0 will mean we only log when logger.dump() is called
 #define DEBUG_TO_SERIAL 1
@@ -38,8 +38,8 @@
 #define CHANNEL_A 2
 #define CHANNEL_B 3
 // Right wheel
-#define CHANNEL_C 4
-#define CHANNEL_D 5
+#define CHANNEL_C 18
+#define CHANNEL_D 19
 uint8_t switchPins[SWITCH_COUNT] = {24, 25, 26, 27};
 
 // Lines
@@ -132,8 +132,10 @@ void loop() {
 
   } else if(robotState ==  IdleState) {
     motor.setTargetSpeed(0,0);
+    motor.setSpeed(0,0);
     motor.move();
-    robot.setState(MoleState);
+
+    // robot.setState(FollowLineState);
     
     // Flush logger buffer
     if(Serial.available() != 0) {
@@ -141,35 +143,38 @@ void loop() {
       if(action == "go") robot.setState(FollowLineState);
       if(action == "seek") robot.setState(SeekLineState);
       if(action == "calibrate") robot.setState(CalibrateState);
-      if(action == "distance") robot.setState(MoleState);
+      if(action == "mole") robot.setState(MoleState);
     }
 
   } else if (robotState ==  CalibrateState) {
     lines.calibrate();
     robot.setState(IdleState);
   } else if (robotState ==  SeekLineState) {
-    motor.setTargetSpeed(0.3, 0.3);
+    motor.setTargetSpeed(1 , 1);
+    motor.setSpeed(1,1);
     motor.move();
 
     logger.log("Left current: %d, Right current: %d, Left target: %d, Right target: %d",
-      (int) (motor.currentSpeed->left * 1000),
-      (int) (motor.currentSpeed->right * 1000),
-      (int) (motor.targetSpeed->left * 1000),
-      (int) (motor.targetSpeed->right * 1000));
+    (int) (motor.getCurrentLeftSpeed() * 100),
+    (int) (motor.getCurrentRightSpeed() * 100),
+    (int) (motor.getTargetLeftSpeed()  * 100),
+    (int) (motor.getTargetRightSpeed() * 100));
 
-    logger.log("Left speed: %d, Right speed: %d",
-      (int) (motor.getTrueLeftSpeed() * 1000),
-      (int) (motor.getTrueRightSpeed() * 1000));
+    logger.log("Left speed: %d, Right speed: %d, Left distance: %d, Right distance: %d",
+      (int) (motor.getTrueLeftSpeed() * 100),
+      (int) (motor.getTrueRightSpeed() * 100),
+      (int) (motor.getLeftDistance() * 100),
+      (int) (motor.getRightDistance() * 100));
     
   } else if (robotState ==  FollowLineState) {
     float value = (float) lines.read();
     // int seed = millis() < 60000 ? millis() : 0;
     // float value = (float) (((int) seed) % 7000);
-    float difference = ((3500 - value) / 7000) * 0.7;
+    float difference = ((value - 3500) / 7000) * 0.7;
 
     // float difference = 0;
-    float leftValue =  0.4 + difference;
-    float rightValue = 0.4 - difference;
+    float leftValue =  0.35 + difference;
+    float rightValue = 0.35 - difference;
 
     motor.setSpeed(leftValue, rightValue);
     motor.setTargetSpeed(leftValue, rightValue);
@@ -180,11 +185,12 @@ void loop() {
       (int) (motor.getTrueLeftSpeed() * 1000),
       (int) (motor.getTrueRightSpeed() * 1000));
 
+
     logger.log("Left current: %d, Right current: %d, Left target: %d, Right target: %d",
-      (int) (motor.currentSpeed->left * 1000),
-      (int) (motor.currentSpeed->right * 1000),
-      (int) (motor.targetSpeed->left * 1000),
-      (int) (motor.targetSpeed->right * 1000));
+    (int) (motor.getCurrentLeftSpeed() * 100),
+    (int) (motor.getCurrentRightSpeed() * 100),
+    (int) (motor.getTargetLeftSpeed()  * 100),
+    (int) (motor.getTargetRightSpeed() * 100));
     motor.move();
   } else if (robotState ==  CoinState) {
     
@@ -194,17 +200,32 @@ void loop() {
     distance.updateDistance();
     float cm = distance.getDistance();
     logger.log("mm: %d", (int) (cm * 10));
-    if(cm > 0) {
+    bool isFirstIteration = motor.setTargetSpeed(0.5, 0.3);
+    if(isFirstIteration) {
+      motor.setSpeed(0.5, 0.3);
+    }
+
+    logger.log("Left current: %d, Right current: %d, Left target: %d, Right target: %d",
+    (int) (motor.getCurrentLeftSpeed() * 100),
+    (int) (motor.getCurrentRightSpeed() * 100),
+    (int) (motor.getTargetLeftSpeed()  * 100),
+    (int) (motor.getTargetRightSpeed() * 100));
+
+    logger.log("Left true: %d, Right true: %d",
+    (int) (motor.getTrueLeftSpeed() * 100),
+    (int) (motor.getTrueRightSpeed() * 100));
+
+    /*if(cm > 0) {
       motor.followWall(
-        10,  // targetDistance
+        10.0,  // targetDistance
         cm,  // currentDistance
-        45,  // turning radius
-        0.3, // average speed
-        1    // correction factor
-      )
+        .45,  // turning radius
+        0.2, // average speed
+        0.15    // correction factor
+      );
     } else {
       motor.setTargetSpeed(0,0);
-    }
+    }*/
 
     motor.move();
   } else {

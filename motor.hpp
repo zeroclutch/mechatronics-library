@@ -117,10 +117,6 @@ class Motor: public RobotModule {
     );
     ~Motor();
 
-    MotorSpeed* currentSpeed;
-    MotorSpeed* previousSpeed;
-    MotorSpeed* targetSpeed;
-
     bool initialize();
     bool systemsCheck();
 
@@ -131,13 +127,19 @@ class Motor: public RobotModule {
     // Reset the distance counters
     void resetCounters();
 
-    // Sets the target wheel speed
-    void setTargetSpeed(float left, float right);
-    void setTargetSpeed(MotorSpeed* speed);
+    // Sets the target wheel speed. Returns true if the speed was changed.
+    bool setTargetSpeed(float left, float right);
+    bool setTargetSpeed(MotorSpeed* speed);
 
     // Sets true wheel speed
     void setSpeed(float left, float right);
     void setSpeed(MotorSpeed* speed);
+
+    float getCurrentLeftSpeed();
+    float getCurrentRightSpeed();
+    
+    float getTargetLeftSpeed();
+    float getTargetRightSpeed();
     
     // Sets the wheels to brake until the next setSpeed() call
     void brake() { currentState = BRAKE; }
@@ -145,15 +147,13 @@ class Motor: public RobotModule {
     MotorSpeed* calculateSpeeds(MotorSpeed* dest, float averageSpeed, float angle);
 
     // Getters
-    double getLeftDistance();
-    double getRightDistance();
-    MotorSpeed* getSpeed();
-    MotorSpeed* getTargetSpeed();
+    float getLeftDistance();
+    float getRightDistance();
 
     float getTrueLeftSpeed();
     float getTrueRightSpeed();
 
-    float followWall(float targetDistance, float currentDistance, float radius, float averageSpeed, float correctionFactor);
+    void followWall(float targetDistance, float currentDistance, float radius, float averageSpeed, float correctionFactor);
 
 };
 

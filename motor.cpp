@@ -13,18 +13,28 @@ uint8_t pinStates[LENGTH][PIN_COUNT] = {
 };
 
 // Counter and distance 
-volatile long leftCounter = 0;
-volatile long rightCounter = 0;
+volatile unsigned long leftCounter = 0;
+volatile unsigned long rightCounter = 0;
 
-const float countsPerRotation = 886.0;
+const float countsPerRotation = 886.0 / 2;
 const float circumference = 0.1885;
 
-const int SPEED_CHECK_INTERVAL = 2000; // 2ms
+const int SPEED_CHECK_INTERVAL = 100000; // 10ms
 volatile float lastLeftDistance = 0;
 volatile float lastRightDistance = 0;
+volatile float lastSpeedCheck = 0;
 
 volatile float leftSpeed = 0;
 volatile float rightSpeed = 0;
+
+volatile float currentSpeedLeft = 0.0;
+volatile float currentSpeedRight = 0.0;
+
+volatile float previousSpeedRight = 0.0;
+volatile float previousSpeedLeft = 0.0;
+
+volatile float targetSpeedLeft = 0.0;
+volatile float targetSpeedRight = 0.0;
 
 volatile unsigned long lastChannelATime = 0;
 volatile unsigned long lastChannelBTime = 0;
@@ -37,35 +47,23 @@ volatile unsigned long currChannelCTime = 0;
 volatile bool started = false;
 
 // Non-interrupt functions
-double getLeftDistance() {
-  return (double) leftCounter / countsPerRotation * circumference;
+float getLeftDistance() {
+  return (float) leftCounter / countsPerRotation * circumference;
 }
 
-double getRightDistance() {
-  return (double) rightCounter / countsPerRotation * circumference;
+float getRightDistance() {
+  return (float) rightCounter / countsPerRotation * circumference;
 }
 
 // Interrupts
 void readChannelA() {
-  currChannelATime = micros();
-  // Check whether B's pulse was closer to this pulse or the last one.
-  // If it is closer to this pulse, we are moving from B to A
-  // If it is closer to the last pulse, we are millis() - lastChannelBTime moving from A to B
-  long d2 = lastChannelBTime - lastChannelATime;
-  long d1 = currChannelATime - lastChannelBTime;
-  if(d1 > d2) {
-    leftCounter--;
-  } else {
-    leftCounter++;
-  }
-
- lastChannelATime = currChannelATime;
+  leftCounter++;
 }
 
 void readChannelB() {
-  lastChannelBTime = micros();
+  rightCounter++;
 }
-
+/*
 // Interrupts
 void readChannelC() {
   currChannelCTime = micros();
@@ -85,21 +83,74 @@ void readChannelC() {
 
 void readChannelD() {
  lastChannelDTime = micros();
+}*/
+
+bool is_zero(float speed) {
+  return fabsf(speed) < 0.0001;
 }
+
+bool is_zero(float speed, float precision) {
+  return fabsf(speed) < precision;
+}
+
 
 void updateLeftSpeed() {
   // Get the distance travelled since the last time we checked
-  leftSpeed = (getLeftDistance() - lastLeftDistance) / SPEED_CHECK_INTERVAL * 1000;
+  float newDistance = getLeftDistance();
+  leftSpeed = (newDistance - lastLeftDistance) / (millis() - lastSpeedCheck) * 1000;
+  lastLeftDistance = newDistance;
 }
 
 void updateRightSpeed() {
   // Get the distance travelled since the last time we checked
-  rightSpeed = (getRightDistance() - lastRightDistance) / SPEED_CHECK_INTERVAL * 1000;
+  float newDistance = getRightDistance();
+  rightSpeed = (newDistance - lastRightDistance) / (millis() - lastSpeedCheck) * 1000;
+  lastRightDistance = newDistance;
 }
 
 void updateSpeeds() {
   updateLeftSpeed();
   updateRightSpeed();
+  lastSpeedCheck = millis();
+
+  // Correct speed based on counter readings
+  // We can assume that the trueSpeed and the currentSpeed are linearly related
+  // This means that we can use the currentSpeed to calculate the trueSpeed
+  // We can only do this if the trueSpeed has converged to the targetSpeed
+  bool hasConverged = true;
+
+  float trueRatio;
+  float expectedRatio;
+
+  if(is_zero(leftSpeed)) {
+    trueRatio = -1;
+  } else {
+    trueRatio = rightSpeed / leftSpeed;
+  }
+
+  if(is_zero(targetSpeedLeft)) {
+    expectedRatio = -1;
+  } else {
+    expectedRatio = targetSpeedRight / targetSpeedLeft;
+  }
+
+  float difference = (trueRatio - expectedRatio) / 2;
+
+  if(expectedRatio < 0 || trueRatio < 0) {
+    // We have not yet converged to the target speed
+    hasConverged = false;
+  }
+
+  if(hasConverged) {
+    if(is_zero(difference, 0.005)) {
+    // If the true ratio is close enough to the expected ratio, do nothing
+    } else  {
+    // If right wheel is faster than expected, correct speeds
+      float delta = targetSpeedLeft * difference;
+      currentSpeedLeft += delta;
+      currentSpeedRight -= delta;
+    }
+  }
 }
 
 // Class methods
@@ -133,23 +184,55 @@ Motor::Motor(
   previousState = BRAKE;
   currentState = BRAKE;
 
-  currentSpeed = (MotorSpeed*) malloc(sizeof(MotorSpeed));
-  currentSpeed->right = 0;
-  currentSpeed->left = 0;
+  currentSpeedRight = 0;
+  currentSpeedLeft = 0;
 
-  targetSpeed = (MotorSpeed*) malloc(sizeof(MotorSpeed));
-  targetSpeed->right = 0;
-  targetSpeed->left = 0;
+  targetSpeedRight = 0;
+  targetSpeedLeft = 0;
 
-  previousSpeed = (MotorSpeed*) malloc(sizeof(MotorSpeed));
+  previousSpeedLeft = 0;
+  previousSpeedRight = 0;
+
   updatePreviousSpeed();
 
   name = "Motor";
 }
 
 Motor::~Motor() {
-    free(previousSpeed);
-    free(currentSpeed);
+  // Nothing to do here
+}
+
+bool Motor::initialize() {
+  // Configure outputs
+  pinMode(pinENA, OUTPUT);
+  pinMode(pinIN1, OUTPUT);
+  pinMode(pinIN2, OUTPUT);
+  pinMode(pinENB, OUTPUT);
+  pinMode(pinIN3, OUTPUT);
+  pinMode(pinIN4, OUTPUT);
+
+  // Configure inputs for distance
+  pinMode(channelA, INPUT);
+  pinMode(channelB, INPUT);
+  pinMode(channelC, INPUT);
+  pinMode(channelD, INPUT);
+  
+  for(int i = 0; i < switchCount; i++) {
+    pinMode(switchPins[i], INPUT);
+  }
+
+  // Configure interrupts
+  attachInterrupt(digitalPinToInterrupt(channelA), readChannelA, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(channelB), readChannelB, CHANGE);
+
+  // Right wheel (check this)
+  // attachInterrupt(digitalPinToInterrupt(channelC), readChannelC, CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(channelD), readChannelD, CHANGE);
+  
+  Timer1.initialize(SPEED_CHECK_INTERVAL);
+  Timer1.attachInterrupt(updateSpeeds);
+  
+  return true;
 }
 
 /**
@@ -198,9 +281,9 @@ void Motor::setAllPins() {
 
 int Motor::getPWMValue(uint8_t isEnabled, uint8_t wheel) {
   if(wheel == WHEEL_LEFT) {
-    return (int) (255.0 * isEnabled * fabs(currentSpeed->left));
+    return (int) (255.0 * isEnabled * fabsf(currentSpeedLeft));
   } else if(wheel == WHEEL_RIGHT) {
-    return (int) (255.0 * isEnabled * fabs(currentSpeed->right));
+    return (int) (255.0 * isEnabled * fabsf(currentSpeedRight));
   } else {
     logger->log("[motor] Invalid wheel value: %d", wheel);
     return 0;
@@ -208,12 +291,26 @@ int Motor::getPWMValue(uint8_t isEnabled, uint8_t wheel) {
 }
 
 
-double Motor::getLeftDistance() {
-  return (double) leftCounter / countsPerRotation * circumference;
+float Motor::getCurrentLeftSpeed() {
+  return currentSpeedLeft;
+};
+float Motor::getCurrentRightSpeed() {
+  return currentSpeedRight;
+};
+
+float Motor::getTargetLeftSpeed() {
+  return targetSpeedLeft;
+};
+float Motor::getTargetRightSpeed() {
+  return targetSpeedRight;
+};
+
+float Motor::getLeftDistance() {
+  return ((float) leftCounter) / countsPerRotation * circumference;
 }
 
-double Motor::getRightDistance() {
-  return (double) rightCounter / countsPerRotation * circumference;
+float Motor::getRightDistance() {
+  return ((float) rightCounter) / countsPerRotation * circumference;
 }
 
 void Motor::resetCounters() {
@@ -237,54 +334,13 @@ void Motor::startCounting() {
   started = true;
 }
 
-bool Motor::initialize() {
-  // Configure outputs
-  pinMode(pinENA, OUTPUT);
-  pinMode(pinIN1, OUTPUT);
-  pinMode(pinIN2, OUTPUT);
-  pinMode(pinENB, OUTPUT);
-  pinMode(pinIN3, OUTPUT);
-  pinMode(pinIN4, OUTPUT);
-
-  // Configure inputs for distance
-  pinMode(channelA, INPUT);
-  pinMode(channelB, INPUT);
-  pinMode(channelC, INPUT);
-  pinMode(channelD, INPUT);
-  
-  for(int i = 0; i < switchCount; i++) {
-    pinMode(switchPins[i], INPUT);
-  }
-
-  // Configure interrupts
-  attachInterrupt(digitalPinToInterrupt(channelA), readChannelA, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(channelB), readChannelB, CHANGE);
-
-  // Right wheel (check this)
-  attachInterrupt(digitalPinToInterrupt(channelC), readChannelC, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(channelD), readChannelD, CHANGE);
-  
-  Timer1.initialize(SPEED_CHECK_INTERVAL);
-  Timer1.attachInterrupt(updateSpeeds);
-  
-  return true;
-}
-
 bool Motor::systemsCheck() {
+
     setTargetSpeed(0.5, 0.5);
+    logger->log("[motor] Speeds set to %d, %d", speedToInt(targetSpeedRight), speedToInt(targetSpeedLeft));
     move();
-    if(!isZero(targetSpeed->left - 0.5) || !isZero(targetSpeed->right - 0.5)) {
+    if(!isZero(targetSpeedLeft - 0.5) || !isZero(targetSpeedRight - 0.5)) {
       logger->log("[motor] Speeds not set correctly.");
-      return false;
-    }
-
-    logger->log("[motor] Speeds set to %d%, %d%", speedToInt(targetSpeed->right), speedToInt(targetSpeed->left));
-
-    for(int i = 0; i < 50; i++) {
-      move();
-    }
-    if(!isZero(currentSpeed->left - 0.5) || !isZero(currentSpeed->right - 0.5)) {
-      logger->log("[motor] Speeds not set correctly");
       return false;
     }
 
@@ -302,50 +358,53 @@ float Motor::clampSpeed(float speed) {
 }
 
 bool Motor::isZero(float speed) {
-  return fabs(speed) < 0.0001;
+  return is_zero(speed);
 }
 
 bool Motor::isZero(float speed, float precision) {
-  return fabs(speed) < precision;
+  return is_zero(speed, precision);
 }
 
 void Motor::handleSpeedChange() {
   // If statement order is important to handle float precision issues
-  if(isZero(currentSpeed->right)      && isZero(currentSpeed->left)) coast();
-  else if(isZero(currentSpeed->right) && currentSpeed->left > 0)     turnLeft();
-  else if(currentSpeed->right > 0     && isZero(currentSpeed->left)) turnRight();
-  else if(currentSpeed->right > 0     && currentSpeed->left > 0)     forward();
-  else if(currentSpeed->right < 0     && currentSpeed->left < 0)     reverse();
-  else if(currentSpeed->right < 0     && currentSpeed->left > 0)     pivotLeft();
-  else if(currentSpeed->right > 0     && currentSpeed->left < 0)     pivotRight();
+  if(isZero(currentSpeedRight)      && isZero(currentSpeedLeft)) coast();
+  else if(isZero(currentSpeedRight) && currentSpeedLeft > 0)     turnLeft();
+  else if(currentSpeedRight > 0     && isZero(currentSpeedLeft)) turnRight();
+  else if(currentSpeedRight > 0     && currentSpeedLeft > 0)     forward();
+  else if(currentSpeedRight < 0     && currentSpeedLeft < 0)     reverse();
+  else if(currentSpeedRight < 0     && currentSpeedLeft > 0)     pivotLeft();
+  else if(currentSpeedRight > 0     && currentSpeedLeft < 0)     pivotRight();
   else {
-    logger->log("[motor] Invalid speed combination: %d%, %d%", speedToInt(currentSpeed->right), speedToInt(currentSpeed->left));
+    logger->log("[motor] Invalid speed combination: %d, %d", speedToInt(currentSpeedRight), speedToInt(currentSpeedLeft));
     coast();
   }
 }
 
 void Motor::setSpeed(MotorSpeed* speed) {
-  currentSpeed->right = clampSpeed(speed->right);
-  currentSpeed->left = clampSpeed(speed->left);
+  currentSpeedRight = clampSpeed(speed->right);
+  currentSpeedLeft = clampSpeed(speed->left);
 }
 
 void Motor::setSpeed(float left, float right) {
-  currentSpeed->right = clampSpeed(left);
-  currentSpeed->left = clampSpeed(right);
+  currentSpeedRight = clampSpeed(right);
+  currentSpeedLeft = clampSpeed(left);
 }
 
-void Motor::setTargetSpeed(MotorSpeed* speed) {
-  targetSpeed->right = clampSpeed(speed->right);
-  targetSpeed->left = clampSpeed(speed->left);
-
-  handleSpeedChange();
+bool Motor::setTargetSpeed(MotorSpeed* speed) {
+  return Motor::setTargetSpeed(speed->left, speed->right);
 }
 
-void Motor::setTargetSpeed(float left, float right) {
-  targetSpeed->right = clampSpeed(right);
-  targetSpeed->left = clampSpeed(left);
+bool Motor::setTargetSpeed(float left, float right) {
+  if(isZero(targetSpeedLeft - left) && isZero(targetSpeedRight - right)) {
+    return false;
+  }
+  targetSpeedRight = clampSpeed(right);
+  targetSpeedLeft = clampSpeed(left);
+
+  logger->log("[motor] Target speeds set to %d, %d", speedToInt(targetSpeedRight), speedToInt(targetSpeedLeft));
 
   handleSpeedChange();
+  return true;
 }
 
 // Returns the calculated speed in meters per second
@@ -357,21 +416,13 @@ float Motor::getTrueRightSpeed() {
   return rightSpeed;
 }
 
-MotorSpeed* Motor::getSpeed() {
-  return currentSpeed;
-}
-
-MotorSpeed* Motor::getTargetSpeed() {
-  return targetSpeed;
-}
-
 int Motor::speedToInt(float speed) {
   return (int) (speed * 100);
 }
 
 void Motor::updatePreviousSpeed() {
-  previousSpeed->right = currentSpeed->right;
-  previousSpeed->left = currentSpeed->left;
+  previousSpeedRight = currentSpeedRight;
+  previousSpeedLeft = currentSpeedLeft;
 }
 
 MotorSpeed* Motor::calculateSpeeds(MotorSpeed* dest, float averageSpeed, float angle) {
@@ -380,7 +431,7 @@ MotorSpeed* Motor::calculateSpeeds(MotorSpeed* dest, float averageSpeed, float a
   return dest;
 }
 
-Motor::followWall(float targetDistance, float currentDistance, float radius, float averageSpeed, float correctionFactor) {
+void Motor::followWall(float targetDistance, float currentDistance, float radius, float averageSpeed, float correctionFactor) {
   float left = averageSpeed;
   float right = averageSpeed * (radius - wheelbaseMeters) / radius; // TODO: compute this as constant 
   
@@ -389,15 +440,15 @@ Motor::followWall(float targetDistance, float currentDistance, float radius, flo
   float error = (targetDistance - currentDistance) / targetDistance;
   float angle = error * correctionFactor;
 
-  setTargetSpeed(left + angle, right - angle);
+  setSpeed(left + angle, right - angle);
 }
 
 void Motor::move() {
   handleSpeedChange();
   bool stateOrSpeedChange = (
     previousState != currentState ||
-    previousSpeed->left != currentSpeed->left ||
-    previousSpeed->right != currentSpeed->right
+    previousSpeedLeft != currentSpeedLeft ||
+    previousSpeedRight != currentSpeedRight
   );
 
   if(stateOrSpeedChange) {
@@ -406,49 +457,32 @@ void Motor::move() {
     setAllPins();
   }
 
-  // Correct speed based on counter readings
-  // We can assume that the trueSpeed and the currentSpeed are linearly related
-  // This means that we can use the currentSpeed to calculate the trueSpeed
-  // We can only do this if the currentSpeed has converged to the targetSpeed
-  bool hasConverged = isZero(currentSpeed->right - targetSpeed->right, 0.001) && isZero(currentSpeed->left - targetSpeed->left, 0.001);
-  logger->log("[motor] Converged: %d", hasConverged);
-  if(hasConverged && !isZero(currentSpeed->left) && !isZero(getTrueLeftSpeed()) && !isZero(currentSpeed->right) && !isZero(getTrueRightSpeed())) {
-    float trueRatio = getTrueRightSpeed() / getTrueLeftSpeed();
-    float expectedRatio = currentSpeed->right / currentSpeed->left;
-      
-    if(isZero(trueRatio - expectedRatio, 0.01)) {
-    // If the true ratio is close enough to the expected ratio, do nothing
-    } else if(trueRatio > expectedRatio) {
-    // If right wheel is faster than expected, speed up left wheel
-      targetSpeed->left = currentSpeed->right / trueRatio;
-    } else {
-    // If left wheel is faster than expected, slow down right wheel
-      targetSpeed->left = currentSpeed->right * trueRatio;
-    }
-    logger->log("[motor] True speed: %d%, %d%", speedToInt(getTrueRightSpeed()), speedToInt(getTrueLeftSpeed()));
-    logger->log("[motor] Target speed: %d%, %d%", speedToInt(targetSpeed->right), speedToInt(targetSpeed->left));
-  }
-
-  logger->log("[motor] Current distance: LEFT: %d, RIGHT %d", leftCounter, rightCounter);
+  // logger->log("[motor] True ratio: %d, Expected ratio: %d, Difference: %d", (int) (trueRatio * 100), (int) (expectedRatio * 100), (int) (difference * 100));
+  // logger->log("[motor] True left: %d, True right: %d", (int) (leftSpeed * 100), (int) (rightSpeed * 100));
+  // logger->log("[motor] True speed: %d, %d", speedToInt(getTrueRightSpeed()), speedToInt(getTrueLeftSpeed()));
+  // logger->log("[motor] Target speed: %d, %d", speedToInt(targetSpeedRight), speedToInt(targetSpeedLeft));
   
+
+  logger->log("[motor] Current distance: LEFT: %d, RIGHT %d", (int) (getLeftDistance() * 100), (int) (getRightDistance() * 100));
+  /*
   // Update speed every SPEED_CHECK_INTERVAL - 1% every 2ms = 100% every 500ms
   if(micros() - lastSpeedUpdate > SPEED_UPDATE_INTERVAL) {
     logger->log("[motor] Interpolating speed after %luus", micros() - lastSpeedUpdate);
     // Update speed to target speed if not already there
-    float rightDelta = targetSpeed->right - currentSpeed->right;
-    if(!isZero(rightDelta)) currentSpeed->right += copysign(speedChangeRate, rightDelta);
-    if(rightDelta < speedChangeRate) currentSpeed->right = targetSpeed->right;
+    float rightDelta = targetSpeedRight - currentSpeedRight;
+    if(!isZero(rightDelta)) currentSpeedRight += copysign(speedChangeRate, rightDelta);
+    if(rightDelta < speedChangeRate) currentSpeedRight = targetSpeedRight;
 
-    float leftDelta = targetSpeed->left - currentSpeed->left;
-    if(!isZero(leftDelta)) currentSpeed->left += copysign(speedChangeRate, leftDelta);
-    if(leftDelta < speedChangeRate) currentSpeed->left = targetSpeed->left;
+    float leftDelta = targetSpeedLeft - currentSpeedLeft;
+    if(!isZero(leftDelta)) currentSpeedLeft += copysign(speedChangeRate, leftDelta);
+    if(leftDelta < speedChangeRate) currentSpeedLeft = targetSpeedLeft;
      
     // Update last speed update time
     lastSpeedUpdate = micros();
-  }
+  }*/
 
-  currentSpeed->left = targetSpeed->left;
-  currentSpeed->right = targetSpeed->right;
+  // currentSpeedLeft = targetSpeedLeft;
+  // currentSpeedRight = targetSpeedRight;
 
   // Only update previous state after checking
   previousState = currentState;
