@@ -24,11 +24,14 @@ class Lines: public RobotModule {
         bool systemsCheck();
         
         bool isLineVisible = false;
+        unsigned long lastPositionUpdate = 0;
 
         bool calibrate();
 
         bool hasLine();
         uint16_t read();
+        float getCurrentAngle();
+
 };
 
 #endif

@@ -19,7 +19,7 @@ volatile unsigned long rightCounter = 0;
 const float countsPerRotation = 886.0 / 2;
 const float circumference = 0.1885;
 
-const int SPEED_CHECK_INTERVAL = 100000; // 10ms
+const int SPEED_CHECK_INTERVAL = 50000; // 5ms
 volatile float lastLeftDistance = 0;
 volatile float lastRightDistance = 0;
 volatile float lastSpeedCheck = 0;
@@ -431,16 +431,24 @@ MotorSpeed* Motor::calculateSpeeds(MotorSpeed* dest, float averageSpeed, float a
   return dest;
 }
 
-void Motor::followWall(float targetDistance, float currentDistance, float radius, float averageSpeed, float correctionFactor) {
-  float left = averageSpeed;
-  float right = averageSpeed * (radius - wheelbaseMeters) / radius; // TODO: compute this as constant 
-  
+void Motor::followWall(float targetDistance, float currentDistance, float radius, float averageSpeed, int position) {
   // If error is positive, we are too close to the wall and need to turn more
   // If error is negative, we are too far from the wall and need to turn less
-  float error = (targetDistance - currentDistance) / targetDistance;
-  float angle = error * correctionFactor;
+  // We travel 1/6 of the circumference of the circle each time we turn
+  // Our new target speed should ensure that we maintain the same distance by the time we have turned 1/6 of the circle
+  // This means that we need to turn less if we are too close to the wall and more if we are too far from the wall
 
-  setSpeed(left + angle, right - angle);
+  float error = targetDistance - currentDistance;
+  //(1-p/6)e
+  // Find a new radius based on the error and the distance to travel
+  float newRadius = radius - error;
+
+  float left = averageSpeed;
+  float right = averageSpeed * (newRadius - wheelbaseCm) / newRadius; // TODO: compute this as constant 
+  // logger->log("[motor] Error: %f, Angle: %f", error, angle);
+  // Update the speeds based on the angle
+
+  setTargetSpeed(left, right);
 }
 
 void Motor::move() {

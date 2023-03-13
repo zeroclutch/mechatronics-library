@@ -68,3 +68,14 @@ void Robot::setState(int newState) {
 int Robot::getState() {
   return state;
 }
+
+int Robot::getPosition() { return position; }
+void Robot::setPosition(int position) {
+  this->position = position;
+}
+void Robot::nextPosition() {
+  position++;
+}
+void Robot::previousPosition() {
+  position--;
+}

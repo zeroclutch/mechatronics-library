@@ -143,7 +143,19 @@ void loop() {
       if(action == "go") robot.setState(FollowLineState);
       if(action == "seek") robot.setState(SeekLineState);
       if(action == "calibrate") robot.setState(CalibrateState);
-      if(action == "mole") robot.setState(MoleState);
+      if(action == "mole") {
+        /*distance.updateDistance();
+        float cm = distance.getDistance();
+        motor.followWall(
+          10.0,  // targetDistance
+          cm,  // currentDistance
+          46.5,  // turning radius for outer wheel
+          0.2, // average speed
+          robot.getPosition()    // current position
+        );
+        motor.setSpeed(motor.getTargetLeftSpeed(), motor.getTargetRightSpeed());*/
+        robot.setState(MoleState);
+      }
     }
 
   } else if (robotState ==  CalibrateState) {
@@ -197,12 +209,28 @@ void loop() {
   } else if (robotState ==  PushButtonState) {
     
   } else if (robotState ==  MoleState) {
-    distance.updateDistance();
-    float cm = distance.getDistance();
-    logger.log("mm: %d", (int) (cm * 10));
     bool isFirstIteration = motor.setTargetSpeed(0.5, 0.3);
     if(isFirstIteration) {
       motor.setSpeed(0.5, 0.3);
+    }
+
+    // Correct at each line (make sure this happens only once)
+    if(lines.hasLine() && millis() > lines.lastPositionUpdate + 100) {
+      if(motor.isForward()) {
+        robot.nextPosition();
+      } else {
+        robot.previousPosition();
+      }
+      
+      distance.updateDistance();
+      float cm = distance.getDistance();
+      motor.followWall(
+        10.0,  // targetDistance
+        cm,  // currentDistance
+        46.5,  // turning radius for outer wheel
+        0.2, // average speed
+        robot.getPosition()    // current position
+      );
     }
 
     logger.log("Left current: %d, Right current: %d, Left target: %d, Right target: %d",

@@ -59,6 +59,8 @@ class Robot: public RobotModule {
     int moduleCount = 0;
     int state = 0;
 
+    int position = 3;
+
   public:
     Robot();
     ~Robot();
@@ -69,6 +71,13 @@ class Robot: public RobotModule {
 
     void setState(int state);
     int getState();
+
+    int getPosition();
+    void setPosition(int position);
+
+    void nextPosition();
+    void previousPosition();
+
 };
 
 #endif

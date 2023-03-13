@@ -70,8 +70,10 @@ class Motor: public RobotModule {
     float speedChangeRate = 0.01;  // 1% per tick
     const int wheelbase = 218; // 218mm
     const float wheelbaseMeters = 0.218; // 218mm
+    const float wheelbaseCm = 21.8; // 218mm
 
     bool started = false;
+    bool isAtMole = false;
 
     unsigned long lastSpeedUpdate = 0;
     const unsigned int SPEED_UPDATE_INTERVAL = 1000; // 1ms
@@ -153,7 +155,9 @@ class Motor: public RobotModule {
     float getTrueLeftSpeed();
     float getTrueRightSpeed();
 
-    void followWall(float targetDistance, float currentDistance, float radius, float averageSpeed, float correctionFactor);
+    void followWall(float targetDistance, float currentDistance, float radius, float averageSpeed, int position);
+
+    bool isForward() { return !(currentState == REVERSE); }
 
 };
 

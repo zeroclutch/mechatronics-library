@@ -63,15 +63,17 @@ bool Lines::calibrate() {
   return true;
 }
 
-bool hasLine() {
+bool Lines::hasLine() {
   qtr.read(sensorValues);
 
   for(uint8_t i = 0; i < SensorCount; i++) {
-    if(sensorValues[i] > 1000) {
+    if(sensorValues[i] > 2000) {
+      lastPositionUpdate = millis() + 1000;
       return true;
     }
   }
-
+  
+  lastPositionUpdate = millis();
   return false;
 }
 
@@ -101,4 +103,10 @@ uint16_t Lines::read()
 
   lastValue = value;
   return value;
+}
+
+
+float Lines::getCurrentAngle() {
+  // Expect all 8 sensors to have the same value
+  // Calculate the angle based on the slope 
 }
