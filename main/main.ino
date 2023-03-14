@@ -1,5 +1,5 @@
 #define DEBUG_ROBOT 1
-#define PERFORM_SYSTEMS_CHECK 1
+#define PERFORM_SYSTEMS_CHECK 0
 
 // Setting this to 0 will mean we only log when logger.dump() is called
 #define DEBUG_TO_SERIAL 1
@@ -51,6 +51,15 @@ const uint8_t LINE_PINS[] = {
 // Distance definitions
 #define DISTANCE_SENSOR_PIN A10
 
+// Robot pins
+#define START_PIN 4
+#define REAR_BUMPER_PIN 46
+#define FRONT_BUMPER_PIN 47
+#define LED_PIN_COUNT 10
+const uint8_t LED_PINS[10] {
+  31, 32, 33, 34, 35, 36, 37, 38, 39, 40
+};
+
 /** END DEFINE PINS **/
 
 
@@ -90,10 +99,15 @@ Lines lines(
 );
 
 // Instantiate logger
-Logger logger(DEBUG_ROBOT, DEBUG_TO_SERIAL);
+Logger logger(
+  DEBUG_ROBOT,
+  DEBUG_TO_SERIAL);
 
 // Instantiate robot
-Robot robot;
+Robot robot(
+  &LED_PINS[0],
+  LED_PIN_COUNT
+);
 
 void dump() {logger.dump();}
 
@@ -135,7 +149,16 @@ void loop() {
     motor.setSpeed(0,0);
     motor.move();
 
-    // robot.setState(FollowLineState);
+    if(digitalRead(START_PIN)) { 
+      int delayCounter = 0;
+      while(digitalRead(START_PIN)) {
+        delay(1);
+        delayCounter++;
+        if(delayCounter > 200) {
+          robot.setState(SeekLineState);
+        }
+      }
+    }
     
     // Flush logger buffer
     if(Serial.available() != 0) {
@@ -144,17 +167,7 @@ void loop() {
       if(action == "seek") robot.setState(SeekLineState);
       if(action == "calibrate") robot.setState(CalibrateState);
       if(action == "mole") {
-        /*distance.updateDistance();
-        float cm = distance.getDistance();
-        motor.followWall(
-          10.0,  // targetDistance
-          cm,  // currentDistance
-          46.5,  // turning radius for outer wheel
-          0.2, // average speed
-          robot.getPosition()    // current position
-        );
-        motor.setSpeed(motor.getTargetLeftSpeed(), motor.getTargetRightSpeed());*/
-        robot.setState(MoleState);
+        robot.setState(SeekMoleState);
       }
     }
 
@@ -162,21 +175,13 @@ void loop() {
     lines.calibrate();
     robot.setState(IdleState);
   } else if (robotState ==  SeekLineState) {
-    motor.setTargetSpeed(1 , 1);
+    motor.setTargetSpeed(1,1);
     motor.setSpeed(1,1);
     motor.move();
 
-    logger.log("Left current: %d, Right current: %d, Left target: %d, Right target: %d",
-    (int) (motor.getCurrentLeftSpeed() * 100),
-    (int) (motor.getCurrentRightSpeed() * 100),
-    (int) (motor.getTargetLeftSpeed()  * 100),
-    (int) (motor.getTargetRightSpeed() * 100));
-
-    logger.log("Left speed: %d, Right speed: %d, Left distance: %d, Right distance: %d",
-      (int) (motor.getTrueLeftSpeed() * 100),
-      (int) (motor.getTrueRightSpeed() * 100),
-      (int) (motor.getLeftDistance() * 100),
-      (int) (motor.getRightDistance() * 100));
+    if(lines.hasLine()) {
+      robot.setState(FollowLineState);
+    }
     
   } else if (robotState ==  FollowLineState) {
     float value = (float) lines.read();
@@ -191,46 +196,60 @@ void loop() {
     motor.setSpeed(leftValue, rightValue);
     motor.setTargetSpeed(leftValue, rightValue);
 
-    logger.log("Left value: %d, Right value: %d, Left speed: %d, Right speed: %d",
-      (int) (leftValue * 1000),
-      (int) (rightValue * 1000),
-      (int) (motor.getTrueLeftSpeed() * 1000),
-      (int) (motor.getTrueRightSpeed() * 1000));
-
-
-    logger.log("Left current: %d, Right current: %d, Left target: %d, Right target: %d",
-    (int) (motor.getCurrentLeftSpeed() * 100),
-    (int) (motor.getCurrentRightSpeed() * 100),
-    (int) (motor.getTargetLeftSpeed()  * 100),
-    (int) (motor.getTargetRightSpeed() * 100));
     motor.move();
-  } else if (robotState ==  CoinState) {
     
-  } else if (robotState ==  PushButtonState) {
+    Serial.println(distance.getDistance());
+
+    if(distance.getDistance() > 25) {
+      robot.setState(SeekCoinState);
+    }
+
+  } else if (robotState ==  SeekCoinState) {
+    // Turn left
+    motor.setSpeed(0.2, 0.5);
+    motor.setTargetSpeed(0.2, 0.5);
+    motor.move();
+
+    if(lines.hasLine()) {
+      robot.setState(AlignCoinState);
+    }
+  } else if (robotState ==  AlignCoinState) {
+    float value = (float) lines.read();
+    // int seed = millis() < 60000 ? millis() : 0;
+    // float value = (float) (((int) seed) % 7000);
+    float difference = ((value - 3500) / 7000) * 0.7;
+
+    // float difference = 0;
+    float leftValue =  0.35 + difference;
+    float rightValue = 0.35 - difference;
+
+    motor.setSpeed(leftValue, rightValue);
+    motor.setTargetSpeed(leftValue, rightValue);
+
+    motor.move();
+
+    if(abs(value - 3500) < 200) {
+      robot.setState(CoinRightState);
+    }
     
-  } else if (robotState ==  MoleState) {
+  } else if (robotState ==  CoinRightState) {
+    motor.setSpeed(-0.5, -0.5);
+    motor.move();
+
+    if(digitalRead(REAR_BUMPER_PIN)) {
+      robot.setState(SeekCrossState);
+    }
+  } else if (robotState ==  CoinRightState) {
+    motor.setSpeed(-0.2, -0.5);
+    motor.move();
+
+    if(digitalRead(REAR_BUMPER_PIN)) {
+      robot.setState(SeekCoinState);
+    }
+  } else if (robotState ==  SeekMoleState) {
     bool isFirstIteration = motor.setTargetSpeed(0.5, 0.3);
     if(isFirstIteration) {
       motor.setSpeed(0.5, 0.3);
-    }
-
-    // Correct at each line (make sure this happens only once)
-    if(lines.hasLine() && millis() > lines.lastPositionUpdate + 100) {
-      if(motor.isForward()) {
-        robot.nextPosition();
-      } else {
-        robot.previousPosition();
-      }
-      
-      distance.updateDistance();
-      float cm = distance.getDistance();
-      motor.followWall(
-        10.0,  // targetDistance
-        cm,  // currentDistance
-        46.5,  // turning radius for outer wheel
-        0.2, // average speed
-        robot.getPosition()    // current position
-      );
     }
 
     logger.log("Left current: %d, Right current: %d, Left target: %d, Right target: %d",
@@ -242,18 +261,6 @@ void loop() {
     logger.log("Left true: %d, Right true: %d",
     (int) (motor.getTrueLeftSpeed() * 100),
     (int) (motor.getTrueRightSpeed() * 100));
-
-    /*if(cm > 0) {
-      motor.followWall(
-        10.0,  // targetDistance
-        cm,  // currentDistance
-        .45,  // turning radius
-        0.2, // average speed
-        0.15    // correction factor
-      );
-    } else {
-      motor.setTargetSpeed(0,0);
-    }*/
 
     motor.move();
   } else {

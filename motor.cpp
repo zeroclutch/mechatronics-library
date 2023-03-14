@@ -111,6 +111,8 @@ void updateRightSpeed() {
 void updateSpeeds() {
   updateLeftSpeed();
   updateRightSpeed();
+
+  /*
   lastSpeedCheck = millis();
 
   // Correct speed based on counter readings
@@ -151,6 +153,7 @@ void updateSpeeds() {
       currentSpeedRight -= delta;
     }
   }
+  */
 }
 
 // Class methods
@@ -441,7 +444,7 @@ void Motor::followWall(float targetDistance, float currentDistance, float radius
   float error = targetDistance - currentDistance;
   //(1-p/6)e
   // Find a new radius based on the error and the distance to travel
-  float newRadius = radius - error;
+  float newRadius = radius - error * averageSpeed * 10;
 
   float left = averageSpeed;
   float right = averageSpeed * (newRadius - wheelbaseCm) / newRadius; // TODO: compute this as constant 
@@ -449,6 +452,7 @@ void Motor::followWall(float targetDistance, float currentDistance, float radius
   // Update the speeds based on the angle
 
   setTargetSpeed(left, right);
+  setSpeed(left, right);
 }
 
 void Motor::move() {

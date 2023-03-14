@@ -29,15 +29,21 @@ extern enum MODULES Modules;
 enum ROBOT_STATES {
   InitializeState,
   IdleState,
-  CalibrateState,
-  CalibrateWhite, 
-  CalibrateBlack,
   SeekLineState,
   FollowLineState,
-  CoinState,
-  PushButtonState,
-  MoleState,
-  EndState
+  SeekCoinState,
+  AlignCoinState,
+  CoinRightState,
+  CoinLeftState,
+  SeekCrossState,
+  SeekButtonState,
+  MoleColorState,
+  SeekMoleState,
+  CenterRobotState,
+  EndState,
+
+  // Other states
+  CalibrateState
 };
 
 enum ARENA_ITEMS {
@@ -61,8 +67,11 @@ class Robot: public RobotModule {
 
     int position = 3;
 
+    const uint8_t *LED_PINS;
+    uint8_t LED_PIN_COUNT;
+
   public:
-    Robot();
+    Robot(const uint8_t *LED_PINS, uint8_t LED_PIN_COUNT);
     ~Robot();
 
     bool initialize();
@@ -77,6 +86,8 @@ class Robot: public RobotModule {
 
     void nextPosition();
     void previousPosition();
+
+    void setLEDs(int state);
 
 };
 

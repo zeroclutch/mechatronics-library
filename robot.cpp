@@ -2,10 +2,13 @@
 #include "robot.hpp"
 #include <assert.h>
 
-Robot::Robot() {
+Robot::Robot(const uint8_t *LED_PINS, uint8_t LED_PIN_COUNT) {
   moduleCount = 0;
   state = InitializeState;
   name = "Robot";
+
+  this->LED_PINS = LED_PINS;
+  this->LED_PIN_COUNT = LED_PIN_COUNT;
 }
 
 Robot::~Robot() {
@@ -14,6 +17,11 @@ Robot::~Robot() {
 
 bool Robot::initialize() {
   logger->log("[robot] %d modules identified...", moduleCount);
+
+  // Initialize LED pins
+  for(int i = 0; i < LED_PIN_COUNT; i++) {
+    pinMode(LED_PINS[i], OUTPUT);
+  }
 
   for(int i = 0; i < moduleCount; i++) {
     if(modules[i] == NULL) continue;
@@ -62,6 +70,7 @@ void Robot::addModule(RobotModule *module, int index) {
 
 void Robot::setState(int newState) {
   logger->log("[robot] Changing state from %d to %d", state, newState);
+  setLEDs(newState);
   state = newState;
 }
 
@@ -78,4 +87,11 @@ void Robot::nextPosition() {
 }
 void Robot::previousPosition() {
   position--;
+}
+
+void Robot::setLEDs(int state) {
+  // Set the LEDs
+  for(int i = 0; i < LED_PIN_COUNT; i++) {
+    digitalWrite(LED_PINS[i], ((state >> i) & 0000000001));
+  }
 }
