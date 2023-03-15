@@ -6,7 +6,8 @@
                 "${workspaceFolder}/**",
                 "~/Documents/Arduino/hardware/sparkfun/esp8266/**",
                 "~/Documents/Arduino/libraries/**",
-                "~/Documents/Arduino/libraries/QTRSensors"
+                "~/Documents/Arduino/libraries/QTRSensors",
+                "~/Documents/Arduino/libraries/Adafruit_TCS34725/**"
             ],
             "defines": [],
             "macFrameworkPath": [

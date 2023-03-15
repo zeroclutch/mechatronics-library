@@ -2,14 +2,14 @@
 #define PERFORM_SYSTEMS_CHECK 0
 
 // Setting this to 0 will mean we only log when logger.dump() is called
-#define DEBUG_TO_SERIAL 1
+#define DEBUG_TO_SERIAL 0
 
 #include "logger.hpp"
 #include "module.hpp"
 #include "robot.hpp"
 
 // Modules
-#include "colors.hpp"
+#include "tcs.hpp"
 #include "motor.hpp"
 #include "distance.hpp"
 #include "lines.hpp"
@@ -26,6 +26,10 @@
 #define GREEN_LED    42
 #define RED_LED      44
 #define BLUE_LED     46
+
+// TCS color sensor pins
+#define TCS_IN_1 SDA
+#define TCS_IN_2 SCL
 
 // Motor definitions
 #define PIN_ENA 9
@@ -64,15 +68,7 @@ const uint8_t LED_PINS[10] {
 
 
 // Instantiate modules
-Colors colors(
-  RED_LED,
-  BLUE_LED,
-  GREEN_LED,
-  WHITE_LED,
-  PHOTOIN,
-  DEBUG_ROBOT,
-  CALIBRATION_MODE
-);
+TCS tcsModule;
 
 Motor motor(
   PIN_ENA,
@@ -129,7 +125,7 @@ void loop() {
     robot.attachLogger(&logger);
 
     // Load all modules
-    robot.addModule(&colors, ColorsModule);
+    robot.addModule(&tcsModule, TCSModule);
     robot.addModule(&motor, MotorModule);
     robot.addModule(&lines, LinesModule);
     robot.addModule(&distance, DistanceModule);
@@ -154,7 +150,7 @@ void loop() {
       while(digitalRead(START_PIN)) {
         delay(1);
         delayCounter++;
-        if(delayCounter > 200) {
+        if(delayCounter > 100) {
           robot.setState(SeekLineState);
         }
       }
@@ -165,6 +161,7 @@ void loop() {
       String action = Serial.readString();
       if(action == "go") robot.setState(FollowLineState);
       if(action == "seek") robot.setState(SeekLineState);
+      if(action == "seekcoin") robot.setState(SeekCoinState);
       if(action == "calibrate") robot.setState(CalibrateState);
       if(action == "mole") {
         robot.setState(SeekMoleState);
@@ -175,8 +172,8 @@ void loop() {
     lines.calibrate();
     robot.setState(IdleState);
   } else if (robotState ==  SeekLineState) {
-    motor.setTargetSpeed(1,1);
-    motor.setSpeed(1,1);
+    motor.setTargetSpeed(0.5,0.5);
+    motor.setSpeed(0.5,0.5);
     motor.move();
 
     if(lines.hasLine()) {
@@ -197,54 +194,109 @@ void loop() {
     motor.setTargetSpeed(leftValue, rightValue);
 
     motor.move();
-    
-    Serial.println(distance.getDistance());
-
-    if(distance.getDistance() > 25) {
+    distance.updateDistance();
+    if(distance.getDistance() > 32) {
       robot.setState(SeekCoinState);
     }
 
+
   } else if (robotState ==  SeekCoinState) {
     // Turn left
-    motor.setSpeed(0.2, 0.5);
-    motor.setTargetSpeed(0.2, 0.5);
+    motor.resetCounters();
+    while(lines.hasLine() || motor.getLeftDistance() < 1) {
+      motor.setTargetSpeed(0.11, 0.23);
+      motor.setSpeed(0.11, 0.23);
+
+      motor.move();
+    }
+
+
+
+    while(!lines.hasLine()) {
+      distance.updateDistance();
+      float value = distance.getDistance();
+      float difference = ((value - 15) / value) * 0.05;
+
+      float leftValue =  0.1 - difference;
+      float rightValue = 0.1 + difference;
+      motor.setTargetSpeed(leftValue, rightValue);
+      motor.setSpeed(leftValue, rightValue);
+
+      motor.move();
+      break;
+    }
+
+    robot.setState(AlignCoinState);
+  } else if (robotState ==  AlignCoinState) {
+    motor.resetCounters();
+    while(!lines.hasCross()) { 
+      float value = (float) lines.read();
+      // int seed = millis() < 60000 ? millis() : 0;
+      // float value = (float) (((int) seed) % 7000);
+      float difference = ((value - 3500) / 7000) * 0.2;
+
+      // float difference = 0;
+      float leftValue =  0.2 + difference;
+      float rightValue = 0.2 - difference;
+
+      motor.setSpeed(leftValue, rightValue);
+      motor.setTargetSpeed(leftValue, rightValue);
+
+      motor.move();
+    }
+
+    robot.setState(CoinState);
+    
+  } else if (robotState ==  CoinState) {
+
+    motor.setSpeed(-0.2, -0.2);
+    motor.setTargetSpeed(-0.2, -0.2);
+
     motor.move();
 
-    if(lines.hasLine()) {
-      robot.setState(AlignCoinState);
-    }
-  } else if (robotState ==  AlignCoinState) {
-    float value = (float) lines.read();
-    // int seed = millis() < 60000 ? millis() : 0;
-    // float value = (float) (((int) seed) % 7000);
-    float difference = ((value - 3500) / 7000) * 0.7;
+    while(lines.hasLine()) { // 10cm
+      float value = (float) lines.read();
+      // int seed = millis() < 60000 ? millis() : 0;
+      // float value = (float) (((int) seed) % 7000);
+      float difference = ((value - 3500) / 7000) * 0.1;
 
-    // float difference = 0;
-    float leftValue =  0.35 + difference;
-    float rightValue = 0.35 - difference;
+      // float difference = 0;
+      float leftValue =  -0.2 - difference;
+      float rightValue = -0.2 + difference;
+
+      motor.setSpeed(leftValue, rightValue);
+      motor.setTargetSpeed(leftValue, rightValue);
+
+      motor.move();
+    }
+
+    if(digitalRead(REAR_BUMPER_PIN)) {
+      robot.setState(SeekCrossState);
+    }
+  } else if (robotState ==  SeekCrossState) {
+    float value = (float) lines.read();
+    if(!lines.hasLine()) {
+      value = 3500;
+    }
+    float difference = ((value - 3500) / 7000) * 0.2;
+
+    float leftValue =  0.3 + difference;
+    float rightValue = 0.3 - difference;
 
     motor.setSpeed(leftValue, rightValue);
     motor.setTargetSpeed(leftValue, rightValue);
 
     motor.move();
 
-    if(abs(value - 3500) < 200) {
-      robot.setState(CoinRightState);
+    if(lines.hasCross()) {
+      robot.setState(SeekButtonState);
     }
-    
-  } else if (robotState ==  CoinRightState) {
-    motor.setSpeed(-0.5, -0.5);
-    motor.move();
-
-    if(digitalRead(REAR_BUMPER_PIN)) {
-      robot.setState(SeekCrossState);
-    }
-  } else if (robotState ==  CoinRightState) {
-    motor.setSpeed(-0.2, -0.5);
-    motor.move();
-
-    if(digitalRead(REAR_BUMPER_PIN)) {
-      robot.setState(SeekCoinState);
+  } else if (robotState ==  SeekButtonState) {
+    if(digitalRead(FRONT_BUMPER_PIN)) {
+      robot.setState(IdleState);
+    } else {
+      motor.setSpeed(0.3, 0.3);
+      motor.move();
     }
   } else if (robotState ==  SeekMoleState) {
     bool isFirstIteration = motor.setTargetSpeed(0.5, 0.3);

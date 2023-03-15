@@ -95,3 +95,22 @@ void Robot::setLEDs(int state) {
     digitalWrite(LED_PINS[i], ((state >> i) & 0000000001));
   }
 }
+
+void Robot::followLine(float averageSpeed, float turnSpeed) {
+  // Read the sensors
+  Lines *lines = (Lines *) modules[LinesModule];
+  Motor *motor = (Motor *) modules[MotorModule];
+
+  float value = (float) lines->read();
+  
+  float difference = ((value - 3500) / 7000) * turnSpeed;
+
+  // float difference = 0;
+  float leftValue =  averageSpeed + difference;
+  float rightValue = averageSpeed - difference;
+
+  motor->setSpeed(leftValue, rightValue);
+  motor->setTargetSpeed(leftValue, rightValue);
+
+  motor->move();
+}

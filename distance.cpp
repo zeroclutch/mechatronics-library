@@ -125,29 +125,24 @@ int Distance::readValue() {
 
 void Distance::logSample(int value) {
   // Check if sample is valid
-  if(value < 0) {
-    outOfRange = true;
-  } else {
-    outOfRange = false;
-  }
-
   samples[sampleIndex] = value;
+  logger->log("[distance] Sample %d: %d", sampleIndex, value);
   sampleIndex = (sampleIndex + 1) % SAMPLE_COUNT;
 }
 
 int Distance::averageSample() { 
   int sum = 0;
+  int total = 0;
   for (int i = 0; i < SAMPLE_COUNT; i++) {
-    sum += samples[i];
-
     // If we don't have 20 samples yet, return the latest sample
-    if(samples[i] == NULL && i != 0) {
-      return samples[i - 1];
-    } else if (samples[i] == NULL) {
-      return -1;
+    if(samples[i] == NULL) {
+      break;
     }
+
+    sum += samples[i];
+    total++;
   }
-  return sum/SAMPLE_COUNT;
+  return sum/(total > 0 ? total : 1);
 }
 
 void Distance::updateDistance() {

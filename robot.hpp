@@ -6,6 +6,14 @@
 #include "module.hpp"
 #endif
 
+#ifndef LINES_H
+#include "lines.hpp"
+#endif
+
+#ifndef MOTOR_H
+#include "motor.hpp"
+#endif
+
 #ifndef CALIBRATION_MODE
 #define CALIBRATION_MODE 0
 #endif
@@ -21,7 +29,8 @@ enum MODULES {
   ColorsModule,
   MotorModule,
   LinesModule,
-  DistanceModule
+  DistanceModule,
+  TCSModule
 };
 
 extern enum MODULES Modules;
@@ -33,8 +42,7 @@ enum ROBOT_STATES {
   FollowLineState,
   SeekCoinState,
   AlignCoinState,
-  CoinRightState,
-  CoinLeftState,
+  CoinState,
   SeekCrossState,
   SeekButtonState,
   MoleColorState,
@@ -88,6 +96,8 @@ class Robot: public RobotModule {
     void previousPosition();
 
     void setLEDs(int state);
+
+    void followLine(float averageSpeed, float turnSpeed);
 
 };
 

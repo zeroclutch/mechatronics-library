@@ -29,6 +29,7 @@ class Lines: public RobotModule {
         bool calibrate();
 
         bool hasLine();
+        bool hasCross();
         uint16_t read();
         float getCurrentAngle();
 

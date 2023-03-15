@@ -475,7 +475,7 @@ void Motor::move() {
   // logger->log("[motor] Target speed: %d, %d", speedToInt(targetSpeedRight), speedToInt(targetSpeedLeft));
   
 
-  logger->log("[motor] Current distance: LEFT: %d, RIGHT %d", (int) (getLeftDistance() * 100), (int) (getRightDistance() * 100));
+  // logger->log("[motor] Current distance: LEFT: %d, RIGHT %d", (int) (getLeftDistance() * 100), (int) (getRightDistance() * 100));
   /*
   // Update speed every SPEED_CHECK_INTERVAL - 1% every 2ms = 100% every 500ms
   if(micros() - lastSpeedUpdate > SPEED_UPDATE_INTERVAL) {

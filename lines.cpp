@@ -67,7 +67,7 @@ bool Lines::hasLine() {
   qtr.read(sensorValues);
 
   for(uint8_t i = 0; i < SensorCount; i++) {
-    if(sensorValues[i] > 2000) {
+    if(sensorValues[i] >= 2300) {
       lastPositionUpdate = millis() + 1000;
       return true;
     }
@@ -75,6 +75,22 @@ bool Lines::hasLine() {
   
   lastPositionUpdate = millis();
   return false;
+}
+
+bool Lines::hasCross() {
+  qtr.read(sensorValues);
+  
+  int triggeredSensors = 0;
+  for(uint8_t i = 0; i < SensorCount; i++) {
+    if(sensorValues[i] >= 1500) {
+      triggeredSensors++;
+    }
+  }
+
+  logger->log("[lines] Triggered sensors: %d", triggeredSensors);
+  
+  // If all the sensors (except up to 2) are at max, we're on a cross
+  return (triggeredSensors >= SensorCount - 2);
 }
 
 uint16_t Lines::read()
