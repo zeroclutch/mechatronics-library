@@ -82,12 +82,19 @@ int Robot::getPosition() { return position; }
 void Robot::setPosition(int position) {
   this->position = position;
 }
+
 void Robot::nextPosition() {
   position++;
 }
 void Robot::previousPosition() {
   position--;
 }
+
+int Robot::getTargetPosition() { return position; }
+void Robot::setTargetPosition(int position) {
+  this->targetPosition = position;
+}
+
 
 void Robot::setLEDs(int state) {
   // Set the LEDs

@@ -73,7 +73,8 @@ class Robot: public RobotModule {
     int moduleCount = 0;
     int state = 0;
 
-    int position = 3;
+    int position = RedButton;
+    int targetPosition = MoleWhite;
 
     const uint8_t *LED_PINS;
     uint8_t LED_PIN_COUNT;
@@ -91,6 +92,9 @@ class Robot: public RobotModule {
 
     int getPosition();
     void setPosition(int position);
+
+    int getTargetPosition();
+    void setTargetPosition(int position);
 
     void nextPosition();
     void previousPosition();

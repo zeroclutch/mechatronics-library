@@ -66,12 +66,6 @@ class Motor: public RobotModule {
     int previousState;
     int currentState;
 
-    // Internal variables
-    float speedChangeRate = 0.01;  // 1% per tick
-    const int wheelbase = 218; // 218mm
-    const float wheelbaseMeters = 0.218; // 218mm
-    const float wheelbaseCm = 21.8; // 218mm
-
     bool started = false;
     bool isAtMole = false;
 
@@ -118,6 +112,12 @@ class Motor: public RobotModule {
         uint8_t *switchPins
     );
     ~Motor();
+
+    // Internal variables
+    float speedChangeRate = 0.01;  // 1% per tick
+    const int wheelbase = 218; // 218mm
+    const float wheelbaseMeters = 0.218; // 218mm
+    const float wheelbaseCm = 21.8; // 218mm
 
     bool initialize();
     bool systemsCheck();
