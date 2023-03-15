@@ -143,8 +143,6 @@ void loop() {
     motor.setSpeed(0, 0);
     motor.move();
 
-    logger.log("The number is %d",tcsModule.getCurrent());
-
     if (digitalRead(START_PIN)) {
       int delayCounter = 0;
       while (digitalRead(START_PIN)) {
@@ -195,7 +193,7 @@ void loop() {
 
     motor.move();
     distance.updateDistance();
-    if (distance.getDistance() > 32) {
+    if (distance.getDistance() > 35 && motor.getLeftDistance() > 2) {
       robot.setState(SeekCoinState);
     }
 
@@ -203,7 +201,7 @@ void loop() {
   } else if (robotState == SeekCoinState) {
     // Turn left
     motor.resetCounters();
-    while (lines.hasLine() || motor.getLeftDistance() < 1) {
+    while (lines.hasLine() || motor.getLeftDistance() < 0.75) {
       motor.setTargetSpeed(0.11, 0.23);
       motor.setSpeed(0.11, 0.23);
 
@@ -213,17 +211,7 @@ void loop() {
 
 
     while (!lines.hasLine()) {
-      distance.updateDistance();
-      float value = distance.getDistance();
-      float difference = ((value - 15) / value) * 0.05;
-
-      float leftValue = 0.1 - difference;
-      float rightValue = 0.1 + difference;
-      motor.setTargetSpeed(leftValue, rightValue);
-      motor.setSpeed(leftValue, rightValue);
-
       motor.move();
-      break;
     }
 
     robot.setState(AlignCoinState);
@@ -261,8 +249,8 @@ void loop() {
       float difference = ((value - 3500) / 7000) * 0.1;
 
       // float difference = 0;
-      float leftValue = -0.2 - difference;
-      float rightValue = -0.2 + difference;
+      float leftValue = -0.15 - difference;
+      float rightValue = -0.15 + difference;
 
       motor.setSpeed(leftValue, rightValue);
       motor.setTargetSpeed(leftValue, rightValue);
@@ -306,11 +294,11 @@ void loop() {
       float value = (float)lines.read();
       // int seed = millis() < 60000 ? millis() : 0;
       // float value = (float) (((int) seed) % 7000);
-      float difference = ((value - 3500) / 7000) * 0.1;
+      float difference = ((value - 3500) / 7000) * 0.05;
 
       // float difference = 0;
-      float leftValue = -0.5 - difference;
-      float rightValue = -0.5 + difference;
+      float leftValue = -0.2 - difference;
+      float rightValue = -0.2 + difference;
 
       motor.setSpeed(leftValue, rightValue);
       motor.setTargetSpeed(leftValue, rightValue);
@@ -344,8 +332,9 @@ void loop() {
 
     float theta = 0.523;  // 3.14/6.0
     float radius = motor.wheelbaseMeters / 2;
-    float distance = ((float)abs(curPos - nextPos)) * theta * radius;
-
+    float linearFactor = 5;
+    float distance = ((float)abs(curPos - nextPos)) * theta * radius * 5;
+    logger.log("I need to travel %d cm", (int) (distance * 100));
     // Consider using line sensors for rotation instead
 
     motor.resetCounters();

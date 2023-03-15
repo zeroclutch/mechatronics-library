@@ -81,7 +81,6 @@ bool Distance::systemsCheck() {
   int value = readValue();
   float voltage = voltageFromValue(value);
   float distance = calculateDistance(voltage);
-  logger->log("got distance.");
 
   if(distance < 0) {
     logger->log("Distance sensor is not working.");

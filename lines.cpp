@@ -115,7 +115,6 @@ uint16_t Lines::read()
 
   // print the sensor values as numbers from 0 to 1023, where 0 means maximum
   // reflectance and 1023 means minimum reflectance
-  logger->log("[lines] The readValue is %d", value);
 
   lastValue = value;
   return value;

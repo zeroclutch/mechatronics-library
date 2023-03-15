@@ -42,8 +42,6 @@ int TCS::getCurrent() {
   //   colorTemp = sensor.calculateColorTemperature_dn40(r, g, b, c);
   //   lux = sensor.calculateLux(r, g, b);
 
-  logger->log("TCS: R: %d, G: %d, B: %d, C: %d", r, g, b, c);
-
   return discriminateByColor(r, g, b, c);
 }
 

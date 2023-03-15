@@ -84,8 +84,6 @@ class Motor: public RobotModule {
     int getPWMValue(uint8_t isEnabled, uint8_t wheel);
 
     int speedToInt(float speed);
-    void printDistance();
-    void printPins();
     void startCounting();
 
     void forward()    { currentState = FORWARD;     }
@@ -142,6 +140,9 @@ class Motor: public RobotModule {
     
     float getTargetLeftSpeed();
     float getTargetRightSpeed();
+    
+    void printDistance();
+    void printPins();
     
     // Sets the wheels to brake until the next setSpeed() call
     void brake() { currentState = BRAKE; }

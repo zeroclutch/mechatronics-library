@@ -16,7 +16,7 @@ uint8_t pinStates[LENGTH][PIN_COUNT] = {
 volatile unsigned long leftCounter = 0;
 volatile unsigned long rightCounter = 0;
 
-const float countsPerRotation = 886 / 2;
+const float countsPerRotation = 886 * 2;
 const float circumference = 0.1885;
 
 const int SPEED_CHECK_INTERVAL = 50000; // 5ms
@@ -251,8 +251,6 @@ void Motor::setPins(uint8_t enA, uint8_t in1, uint8_t in2, uint8_t enB, uint8_t 
     }
   }
 
-  logger->log("[motor] Setting motor pins. State=%d, enA=%d, enB=%d", currentState, enA, enB);
-
   /** LEFT WHEEL **/
 
   // Turn off enable momentarily so we don't accidentally brake during switching
@@ -322,8 +320,7 @@ void Motor::resetCounters() {
 }
 
 void Motor::printDistance() {
-  logger->log("[motor] Distance travelled (cm): %f", getRightDistance() * 100);
-  logger->log("[motor] Speed (cm/s): %f", getRightDistance() * 100 / 2.0);
+  logger->log("[motor] Distance travelled (cm): %d", (int) (getRightDistance() * 100));
 }
 
 void Motor::printPins() {
@@ -404,8 +401,6 @@ bool Motor::setTargetSpeed(float left, float right) {
   targetSpeedRight = clampSpeed(right);
   targetSpeedLeft = clampSpeed(left);
 
-  logger->log("[motor] Target speeds set to %d, %d", speedToInt(targetSpeedRight), speedToInt(targetSpeedLeft));
-
   handleSpeedChange();
   return true;
 }
@@ -464,7 +459,6 @@ void Motor::move() {
   );
 
   if(stateOrSpeedChange) {
-    logger->log("[motor] Changing state! Previous state: %d, Current state: %d", previousState, currentState); 
     // Set pin values
     setAllPins();
   }
