@@ -33,15 +33,13 @@ extern enum TCS_COLOR_LIST TCS_Color_List;
 
 class TCS: public RobotModule {
     private:
-        Adafruit_TCS34725 sensor;
 
         int TCS::discriminateByColor(int r, int g, int b, int c);
-        int TCS::getDifference(TCSColor a, TCSColor b);
-
-        TCSColor tcsColorGuide[6];
+        int TCS::getDifference(TCSColor *a, TCSColor *b);
 
     public:
         TCS();
+        Adafruit_TCS34725 *sensor;
 
         bool initialize();
         bool systemsCheck();

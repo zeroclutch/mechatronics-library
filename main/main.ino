@@ -2,7 +2,7 @@
 #define PERFORM_SYSTEMS_CHECK 0
 
 // Setting this to 0 will mean we only log when logger.dump() is called
-#define DEBUG_TO_SERIAL 0
+#define DEBUG_TO_SERIAL 1
 
 #include "logger.hpp"
 #include "module.hpp"
@@ -143,6 +143,8 @@ void loop() {
     motor.setSpeed(0, 0);
     motor.move();
 
+    logger.log("The number is %d",tcsModule.getCurrent());
+
     if (digitalRead(START_PIN)) {
       int delayCounter = 0;
       while (digitalRead(START_PIN)) {
@@ -157,18 +159,18 @@ void loop() {
     // Flush logger buffer
     if (Serial.available() != 0) {
       String action = Serial.readString();
-      if (action == "go") robot.setState(FollowLineState);
-      if (action == "seek") robot.setState(SeekLineState);
+      if (action == "seekline") robot.setState(SeekLineState);
+      if (action == "followline") robot.setState(FollowLineState);
       if (action == "seekcoin") robot.setState(SeekCoinState);
-      if (action == "calibrate") robot.setState(CalibrateState);
-      if (action == "mole") {
-        robot.setState(SeekMoleState);
-      }
+      if (action == "aligncoin") robot.setState(AlignCoinState);
+      if (action == "coin") robot.setState(CoinState);
+      if (action == "seekcross") robot.setState(SeekCrossState);
+      if (action == "molecolor") robot.setState(MoleColorState);
+      if (action == "seekmole") robot.setState(SeekMoleState);
+      if (action == "centerrobot") robot.setState(CenterRobotState);
+      if (action == "end") robot.setState(EndState);
     }
 
-  } else if (robotState == CalibrateState) {
-    lines.calibrate();
-    robot.setState(IdleState);
   } else if (robotState == SeekLineState) {
     motor.setTargetSpeed(0.5, 0.5);
     motor.setSpeed(0.5, 0.5);
@@ -368,6 +370,7 @@ void loop() {
     robot.setState(MoleColorState);
   } else if (robotState == MoleColorState) {
     int color = tcsModule.getCurrent();
+    logger.log("Current color: %d", color);
     if (color == TCS_RED) robot.setTargetPosition(MoleRed);
     else if (color == TCS_GREEN) robot.setTargetPosition(MoleGreen);
     else if (color == TCS_BLUE) robot.setTargetPosition(MoleBlue);
