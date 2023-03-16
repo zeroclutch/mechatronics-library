@@ -251,7 +251,7 @@ void loop() {
       motor.move();
     }
     
-    if(robot.coinsCollected < 3) {
+    if(robot.coinsCollected < 2) {
       robot.setState(CoinLeftState);
     } else {
       robot.setState(CoinRightState);
@@ -261,7 +261,7 @@ void loop() {
 
     // Use PID with distance
     motor.resetCounters();
-    float difference = 0.05;
+    float difference = 0.01;
     float leftValue = -0.2 + difference;
     float rightValue = -0.2 - difference;
     while(!digitalRead(REAR_BUMPER_PIN)) {
@@ -271,7 +271,7 @@ void loop() {
       motor.move();
     }
 
-    robot.coinsCollected = 2;
+    robot.coinsCollected += 2;
     
     leftValue = 0.2 - difference;
     rightValue = 0.2 + difference;
@@ -288,7 +288,7 @@ void loop() {
 
     // Use PID with distance
     motor.resetCounters();
-    float difference = 0.02;
+    float difference = 0.01;
     float leftValue = -0.2 + difference;
     float rightValue = -0.2 - difference;
     while(!digitalRead(REAR_BUMPER_PIN)) {
