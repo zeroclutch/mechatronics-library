@@ -110,6 +110,9 @@ void setup() {
 
   Serial.println("Starting...");
   setInterval(&dump, 1000);
+
+  pinMode(REAR_BUMPER_PIN, INPUT_PULLUP);
+  pinMode(FRONT_BUMPER_PIN, INPUT_PULLUP);
 }
 
 void loop() {
@@ -193,7 +196,7 @@ void loop() {
 
     motor.move();
     distance.updateDistance();
-    if (distance.getDistance() > 35 && motor.getLeftDistance() > 2) {
+    if (distance.getDistance() > 34 && motor.getRightDistance() > 1.6) {
       robot.setState(SeekCoinState);
     }
 
@@ -201,7 +204,7 @@ void loop() {
   } else if (robotState == SeekCoinState) {
     // Turn left
     motor.resetCounters();
-    while (lines.hasLine() || motor.getLeftDistance() < 0.75) {
+    while (lines.hasLine() || motor.getLeftDistance() < 0.25) {
       motor.setTargetSpeed(0.11, 0.23);
       motor.setSpeed(0.11, 0.23);
 
@@ -224,8 +227,8 @@ void loop() {
       float difference = ((value - 3500) / 7000) * 0.2;
 
       // float difference = 0;
-      float leftValue = 0.2 + difference;
-      float rightValue = 0.2 - difference;
+      float leftValue = 0.1 + difference;
+      float rightValue = 0.1 - difference;
 
       motor.setSpeed(leftValue, rightValue);
       motor.setTargetSpeed(leftValue, rightValue);
@@ -242,23 +245,7 @@ void loop() {
 
     motor.move();
 
-    while (lines.hasLine()) {  // 10cm
-      float value = (float)lines.read();
-      // int seed = millis() < 60000 ? millis() : 0;
-      // float value = (float) (((int) seed) % 7000);
-      float difference = ((value - 3500) / 7000) * 0.1;
-
-      // float difference = 0;
-      float leftValue = -0.15 - difference;
-      float rightValue = -0.15 + difference;
-
-      motor.setSpeed(leftValue, rightValue);
-      motor.setTargetSpeed(leftValue, rightValue);
-
-      motor.move();
-    }
-
-    if (digitalRead(REAR_BUMPER_PIN)) {
+    if (!digitalRead(REAR_BUMPER_PIN)) { //Low when closed
       robot.setState(SeekCrossState);
     }
   } else if (robotState == SeekCrossState) {
@@ -280,7 +267,7 @@ void loop() {
       robot.setState(SeekButtonState);
     }
   } else if (robotState == SeekButtonState) {
-    if (digitalRead(FRONT_BUMPER_PIN)) {
+    if (!digitalRead(FRONT_BUMPER_PIN)) {
       robot.setPosition(RedButton);
       robot.setTargetPosition(MoleWhite);
       robot.setState(CenterRobotState);
@@ -317,7 +304,6 @@ void loop() {
 
     robot.setState(SeekMoleState);
   } else if (robotState == SeekMoleState) {
-    robot.setState(MoleColorState);
 
     // Pivot to correct position
     int curPos = robot.getPosition();
@@ -330,7 +316,7 @@ void loop() {
       motor.setSpeed(0.2, -0.2);
     }
 
-    float theta = 0.523;  // 3.14/6.0
+    float theta = 0.523;  // 2 * pi / 12
     float radius = motor.wheelbaseMeters / 2;
     float linearFactor = 5;
     float distance = ((float)abs(curPos - nextPos)) * theta * radius * 5;

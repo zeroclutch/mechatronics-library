@@ -10,7 +10,7 @@
 #define DISTANCE_H
 
 #define MAX_ANALOG_READ 613
-#define SAMPLE_COUNT 5
+#define SAMPLE_COUNT 10
 
 class Distance: public RobotModule {
 private:
