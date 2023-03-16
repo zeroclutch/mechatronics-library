@@ -79,8 +79,8 @@ int Robot::getState() {
 }
 
 int Robot::getPosition() { return position; }
-void Robot::setPosition(int position) {
-  this->position = position;
+void Robot::setPosition(int newPos) {
+  this->position = newPos;
 }
 
 void Robot::nextPosition() {
@@ -90,9 +90,9 @@ void Robot::previousPosition() {
   position--;
 }
 
-int Robot::getTargetPosition() { return position; }
-void Robot::setTargetPosition(int position) {
-  this->targetPosition = position;
+int Robot::getTargetPosition() { return targetPosition; }
+void Robot::setTargetPosition(int newPos) {
+  this->targetPosition = newPos;
 }
 
 

@@ -16,8 +16,8 @@ uint8_t pinStates[LENGTH][PIN_COUNT] = {
 volatile unsigned long leftCounter = 0;
 volatile unsigned long rightCounter = 0;
 
-const float countsPerRotation = 886 * 2;
-const float circumference = 0.1885;
+const float countsPerRotation = 1687.388889; // for single trigger
+const float circumference = 0.18849556;
 
 const int SPEED_CHECK_INTERVAL = 50000; // 5ms
 volatile float lastLeftDistance = 0;
@@ -307,10 +307,12 @@ float Motor::getTargetRightSpeed() {
 };
 
 float Motor::getLeftDistance() {
+  logger->log("[motor] Left counter: %d", leftCounter);
   return ((float) leftCounter) / countsPerRotation * circumference;
 }
 
 float Motor::getRightDistance() {
+  logger->log("[motor] Right counter: %d", leftCounter);
   return ((float) rightCounter) / countsPerRotation * circumference;
 }
 

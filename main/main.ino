@@ -8,6 +8,9 @@
 #include "module.hpp"
 #include "robot.hpp"
 
+// #define STARTING_STATE SeekLineState
+#define STARTING_STATE SeekButtonState
+
 // Modules
 #include "tcs.hpp"
 #include "motor.hpp"
@@ -52,13 +55,18 @@ const uint8_t LINE_PINS[] = {
   23, 24, 25, 26, 27, 28, 29, 30
 };
 
+#define EMITTER_PIN_REAR A8
+const uint8_t LINE_PINS_REAR[] = {
+  A7, A6, A5, A4, A3, A2, A1, A0
+};
+
 // Distance definitions
 #define DISTANCE_SENSOR_PIN A10
 
 // Robot pins
 #define START_PIN 4
 #define REAR_BUMPER_PIN 46
-#define FRONT_BUMPER_PIN 47
+#define FRONT_BUMPER_PIN 14
 #define LED_PIN_COUNT 10
 const uint8_t LED_PINS[10]{
   31, 32, 33, 34, 35, 36, 37, 38, 39, 40
@@ -88,6 +96,10 @@ Distance distance(
   DISTANCE_SENSOR_PIN);
 
 Lines lines(
+  EMITTER_PIN,
+  &LINE_PINS[0]);
+
+Lines linesRear(
   EMITTER_PIN,
   &LINE_PINS[0]);
 
@@ -128,6 +140,7 @@ void loop() {
     // Load all modules
     robot.addModule(&tcsModule, TCSModule);
     robot.addModule(&motor, MotorModule);
+    // robot.addModule(&linesRear, LinesRearModule);
     robot.addModule(&lines, LinesModule);
     robot.addModule(&distance, DistanceModule);
 
@@ -152,7 +165,7 @@ void loop() {
         delay(1);
         delayCounter++;
         if (delayCounter > 100) {
-          robot.setState(SeekLineState);
+          robot.setState(STARTING_STATE);
         }
       }
     }
@@ -164,8 +177,10 @@ void loop() {
       if (action == "followline") robot.setState(FollowLineState);
       if (action == "seekcoin") robot.setState(SeekCoinState);
       if (action == "aligncoin") robot.setState(AlignCoinState);
-      if (action == "coin") robot.setState(CoinState);
+      if (action == "coinleft") robot.setState(CoinLeftState);
+      if (action == "coinright") robot.setState(CoinLeftState);
       if (action == "seekcross") robot.setState(SeekCrossState);
+      if (action == "seekbutton") robot.setState(SeekButtonState);
       if (action == "molecolor") robot.setState(MoleColorState);
       if (action == "seekmole") robot.setState(SeekMoleState);
       if (action == "centerrobot") robot.setState(CenterRobotState);
@@ -224,35 +239,81 @@ void loop() {
       float value = (float)lines.read();
       // int seed = millis() < 60000 ? millis() : 0;
       // float value = (float) (((int) seed) % 7000);
-      float difference = ((value - 3500) / 7000) * 0.2;
+      float difference = ((value - 3500) / 7000) * 0.22;
 
       // float difference = 0;
-      float leftValue = 0.1 + difference;
-      float rightValue = 0.1 - difference;
+      float leftValue = 0.17 + difference;
+      float rightValue = 0.17 - difference;
 
       motor.setSpeed(leftValue, rightValue);
       motor.setTargetSpeed(leftValue, rightValue);
 
       motor.move();
     }
-
-    robot.setState(CoinState);
-
-  } else if (robotState == CoinState) {
-
-    motor.setSpeed(-0.2, -0.2);
-    motor.setTargetSpeed(-0.2, -0.2);
-
-    motor.move();
-
-    if (!digitalRead(REAR_BUMPER_PIN)) { //Low when closed
-      robot.setState(SeekCrossState);
+    
+    if(robot.coinsCollected < 3) {
+      robot.setState(CoinLeftState);
+    } else {
+      robot.setState(CoinRightState);
     }
+
+  } else if (robotState == CoinLeftState) {
+
+    // Use PID with distance
+    motor.resetCounters();
+    float difference = 0.05;
+    float leftValue = -0.2 + difference;
+    float rightValue = -0.2 - difference;
+    while(!digitalRead(REAR_BUMPER_PIN)) {
+      motor.setSpeed(leftValue, rightValue);
+      motor.setTargetSpeed(leftValue, rightValue);
+
+      motor.move();
+    }
+
+    robot.coinsCollected = 2;
+    
+    leftValue = 0.2 - difference;
+    rightValue = 0.2 + difference;
+
+    while(!lines.hasLine()) {
+      motor.setSpeed(leftValue, rightValue);
+      motor.setTargetSpeed(leftValue, rightValue);
+
+      motor.move();
+    }
+
+    robot.setState(AlignCoinState);
+  } else if (robotState == CoinRightState) {
+
+    // Use PID with distance
+    motor.resetCounters();
+    float difference = 0.02;
+    float leftValue = -0.2 + difference;
+    float rightValue = -0.2 - difference;
+    while(!digitalRead(REAR_BUMPER_PIN)) {
+      motor.setSpeed(leftValue, rightValue);
+      motor.setTargetSpeed(leftValue, rightValue);
+
+      motor.move();
+    }
+
+    robot.coinsCollected = 4;
+    
+    leftValue = 0.2 - difference;
+    rightValue = 0.2 + difference;
+
+    while(!lines.hasLine()) {
+      motor.setSpeed(leftValue, rightValue);
+      motor.setTargetSpeed(leftValue, rightValue);
+
+      motor.move();
+    }
+
+    robot.setState(SeekCrossState);
   } else if (robotState == SeekCrossState) {
     float value = (float)lines.read();
-    if (!lines.hasLine()) {
-      value = 3500;
-    }
+    
     float difference = ((value - 3500) / 7000) * 0.2;
 
     float leftValue = 0.3 + difference;
@@ -267,25 +328,18 @@ void loop() {
       robot.setState(SeekButtonState);
     }
   } else if (robotState == SeekButtonState) {
-    if (!digitalRead(FRONT_BUMPER_PIN)) {
-      robot.setPosition(RedButton);
-      robot.setTargetPosition(MoleWhite);
-      robot.setState(CenterRobotState);
-    } else {
+    motor.resetCounters();
+    while(!linesRear.hasCross() && motor.getLeftDistance() < 0.10) {
       motor.setSpeed(0.3, 0.3);
       motor.move();
     }
-  } else if (robotState == CenterRobotState) {
-    // Find the center
-    while (!lines.hasCross()) {
-      float value = (float)lines.read();
-      // int seed = millis() < 60000 ? millis() : 0;
-      // float value = (float) (((int) seed) % 7000);
-      float difference = ((value - 3500) / 7000) * 0.05;
 
-      // float difference = 0;
-      float leftValue = -0.2 - difference;
-      float rightValue = -0.2 + difference;
+    while(!digitalRead(FRONT_BUMPER_PIN)) {
+      float value = (float) lines.read();
+      float difference = ((value - 3500) / 7000) * 0.2;
+
+      float leftValue = 0.3 + difference;
+      float rightValue = 0.3 - difference;
 
       motor.setSpeed(leftValue, rightValue);
       motor.setTargetSpeed(leftValue, rightValue);
@@ -293,12 +347,21 @@ void loop() {
       motor.move();
     }
 
-    motor.resetCounters();
+    robot.setState(CenterRobotState);
 
-    // Go forward to align wheels on cross
-    while (motor.getLeftDistance() < 0.2) {
-      motor.setSpeed(0.2, 0.2);
-      motor.setTargetSpeed(0.2, 0.2);
+  } else if (robotState == CenterRobotState) {
+    motor.resetCounters();
+    // Find the center
+    while (!linesRear.hasCross()) {
+      float value = (float) linesRear.read();
+      float difference = ((value - 3500) / 7000) * 0.2;
+
+      // float difference = 0;
+      float leftValue = -0.2 + difference;
+      float rightValue = -0.2 - difference;
+      motor.setSpeed(leftValue, rightValue);
+      motor.setTargetSpeed(leftValue, rightValue);
+
       motor.move();
     }
 
@@ -312,21 +375,28 @@ void loop() {
       motor.setTargetSpeed(0.2, -0.2);
       motor.setSpeed(0.2, -0.2);
     } else if (curPos < nextPos) {
-      motor.setTargetSpeed(0.2, -0.2);
-      motor.setSpeed(0.2, -0.2);
+      motor.setTargetSpeed(-0.2, 0.2);
+      motor.setSpeed(-0.2, 0.2);
     }
 
     float theta = 0.523;  // 2 * pi / 12
     float radius = motor.wheelbaseMeters / 2;
-    float linearFactor = 5;
-    float distance = ((float)abs(curPos - nextPos)) * theta * radius * 5;
+    float linearFactor = 1;
+    float distance = ((float) abs(curPos - nextPos)) * theta * radius ;
     logger.log("I need to travel %d cm", (int) (distance * 100));
+    logger.log("I need to travel from %d to %d", curPos, nextPos);
     // Consider using line sensors for rotation instead
 
     motor.resetCounters();
     while (motor.getLeftDistance() < distance) {
+      logger.log("Distance travelled: %d", (int) (motor.getLeftDistance() * 100));
       motor.move();
     }
+
+    // Alternative: turn until we lose a line
+    // continue until we get 3500~ line reading 
+    // increment or decrement pos
+    // rinse/repeat until we are at the right one
 
     robot.setPosition(nextPos);
 
@@ -334,8 +404,8 @@ void loop() {
       float value = (float)lines.read();
       float difference = ((value - 3500) / 7000) * 0.2;
 
-      float leftValue = 0.4 + difference;
-      float rightValue = 0.4 - difference;
+      float leftValue = 0.35 + difference;
+      float rightValue = 0.35 - difference;
 
       motor.setSpeed(leftValue, rightValue);
       motor.setTargetSpeed(leftValue, rightValue);

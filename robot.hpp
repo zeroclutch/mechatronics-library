@@ -29,6 +29,7 @@ enum MODULES {
   ColorsModule,
   MotorModule,
   LinesModule,
+  LinesRearModule,
   DistanceModule,
   TCSModule
 };
@@ -42,7 +43,8 @@ enum ROBOT_STATES {
   FollowLineState,
   SeekCoinState,
   AlignCoinState,
-  CoinState,
+  CoinLeftState,
+  CoinRightState,
   SeekCrossState,
   SeekButtonState,
   MoleColorState,
@@ -82,6 +84,8 @@ class Robot: public RobotModule {
   public:
     Robot(const uint8_t *LED_PINS, uint8_t LED_PIN_COUNT);
     ~Robot();
+
+    int coinsCollected = 0;
 
     bool initialize();
     bool systemsCheck();

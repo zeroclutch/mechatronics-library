@@ -82,7 +82,7 @@ bool Lines::hasCross() {
   
   int triggeredSensors = 0;
   for(uint8_t i = 0; i < SensorCount; i++) {
-    if(sensorValues[i] >= 1500) {
+    if(sensorValues[i] >= 2200) {
       triggeredSensors++;
     }
   }
