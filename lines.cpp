@@ -112,7 +112,7 @@ bool Lines::hasCross() {
     }
   }
 
-  logger->log("[lines] Triggered sensors: %d", triggeredSensors);
+  // logger->log("[lines] Triggered sensors: %d", triggeredSensors);
   
   // If all the sensors (except up to 2) are at max, we're on a cross
   return (triggeredSensors >= SensorCount - 2);

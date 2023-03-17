@@ -8,8 +8,8 @@ uint8_t pinStates[LENGTH][PIN_COUNT] = {
   {   0,  0,  1,  0,  0,  1}, // COAST
   {   1,  0,  1,  0,  0,  1}, // TURN_LEFT
   {   0,  0,  1,  1,  0,  1}, // TURN_RIGHT
-  {   1,  0,  1,  1,  1,  0}, // PIVOT_LEFT
-  {   1,  1,  0,  1,  0,  1}  // PIVOT_RIGHT
+  {   1,  1,  0,  1,  0,  1}, // PIVOT_LEFT
+  {   1,  0,  1,  1,  1,  0}  // PIVOT_RIGHT
 };
 
 // Counter and distance 
@@ -307,12 +307,12 @@ float Motor::getTargetRightSpeed() {
 };
 
 float Motor::getLeftDistance() {
-  logger->log("[motor] Left counter: %d", leftCounter);
+  // logger->log("[motor] Left counter: %lu", leftCounter);
   return ((float) leftCounter) / countsPerRotation * circumference;
 }
 
 float Motor::getRightDistance() {
-  logger->log("[motor] Right counter: %d", leftCounter);
+  // logger->log("[motor] Right counter: %lu", leftCounter);
   return ((float) rightCounter) / countsPerRotation * circumference;
 }
 

@@ -8,8 +8,8 @@
 #include "module.hpp"
 #include "robot.hpp"
 
-#define STARTING_STATE SeekLineState // actual
-// #define STARTING_STATE SeekButtonState // testing only
+// #define STARTING_STATE SeekLineState // actual
+#define STARTING_STATE SeekButtonState // testing only
 
 // Modules
 #include "tcs.hpp"
@@ -175,7 +175,7 @@ void loop() {
       if (action == "seekcoin") robot.setState(SeekCoinState);
       if (action == "aligncoin") robot.setState(AlignCoinState);
       if (action == "coinleft") robot.setState(CoinLeftState);
-      if (action == "coinright") robot.setState(CoinLeftState);
+      if (action == "coinright") robot.setState(CoinRightState);
       if (action == "seekcross") robot.setState(SeekCrossState);
       if (action == "seekbutton") robot.setState(SeekButtonState);
       if (action == "molecolor") robot.setState(MoleColorState);
@@ -208,7 +208,7 @@ void loop() {
 
     motor.move();
     distance.updateDistance();
-    if (distance.getDistance() > 34 && motor.getRightDistance() > 1.6) {
+    if (distance.getDistance() > 34 && motor.getLeftDistance() > 1.6) {
       robot.setState(SeekCoinState);
     }
 
@@ -216,7 +216,7 @@ void loop() {
   } else if (robotState == SeekCoinState) {
     // Turn left
     motor.resetCounters();
-    while (lines.hasLine() || motor.getLeftDistance() < 0.25) {
+    while (lines.hasLine() || motor.getRightDistance() < 0.25) {
       motor.setTargetSpeed(0.11, 0.23);
       motor.setSpeed(0.11, 0.23);
 
@@ -234,8 +234,6 @@ void loop() {
     motor.resetCounters();
     while (!lines.hasCross()) {
       float value = (float)lines.read();
-      // int seed = millis() < 60000 ? millis() : 0;
-      // float value = (float) (((int) seed) % 7000);
       float difference = ((value - 3500) / 7000) * 0.17;
 
       // float difference = 0;
@@ -283,23 +281,27 @@ void loop() {
 
     robot.setState(AlignCoinState);
   } else if (robotState == CoinRightState) {
+    float pivotSpeed = 0.2;
+    float idleSpeed = 0.05;
+    float maxDistance = 0.25;
+
     // Pivot back left
     motor.resetCounters();
-    motor.setSpeed(-0.2, 0);
-    motor.setTargetSpeed(-0.2, 0);
-    while(motor.getLeftDistance() < 0.1) {
+    motor.setSpeed(-pivotSpeed, -idleSpeed);
+    motor.setTargetSpeed(-pivotSpeed, -idleSpeed);
+    while(motor.getLeftDistance() < maxDistance) {
       motor.move();
     }
 
     // Pivot back right
     motor.resetCounters();
-    motor.setSpeed(0, -0.2);
-    motor.setTargetSpeed(0, -0.2);
-    while(motor.getRightDistance() < 0.1) {
+    motor.setTargetSpeed(-idleSpeed, -pivotSpeed);
+    motor.setSpeed(-idleSpeed, -pivotSpeed);
+    while(motor.getRightDistance() < maxDistance) {
       motor.move();
     }
 
-    motor.setSpeed(-0.2, -0.2);
+    motor.setSpeed(-pivotSpeed, -pivotSpeed);
     while(!digitalRead(REAR_BUMPER_PIN)) {
       motor.move();
     }
@@ -308,23 +310,23 @@ void loop() {
     
     // Pivot front right
     motor.resetCounters();
-    motor.setSpeed(0, 0.2);
-    motor.setTargetSpeed(0, 0.2);
-    while(motor.getRightDistance() < 0.1) {
+    motor.setSpeed(idleSpeed, pivotSpeed);
+    motor.setTargetSpeed(idleSpeed, pivotSpeed);
+    while(motor.getRightDistance() < maxDistance) {
       motor.move();
     }
 
     // Pivot back right
     motor.resetCounters();
-    motor.setSpeed(0.2, 0);
-    motor.setTargetSpeed(0.2, 0);
-    while(motor.getLeftDistance() < 0.1) {
+    motor.setSpeed(pivotSpeed, idleSpeed);
+    motor.setTargetSpeed(pivotSpeed, idleSpeed);
+    while(motor.getLeftDistance() < maxDistance) {
       motor.move();
     }
 
     // Go forward
-    motor.setSpeed(0.2, 0.2);
-    motor.setTargetSpeed(0.2, 0.2);
+    motor.setSpeed(pivotSpeed, pivotSpeed);
+    motor.setTargetSpeed(pivotSpeed, pivotSpeed);
     while(!lines.hasLine()) {
       motor.move();
     }
@@ -359,7 +361,7 @@ void loop() {
 
     while(!digitalRead(FRONT_BUMPER_PIN)) {
       float value = (float) lines.read();
-      float difference = ((value - 3500) / 7000) * 0.2;
+      float difference = ((value - 3500) / 7000) * 0.25;
 
       float leftValue = 0.3 + difference;
       float rightValue = 0.3 - difference;
@@ -378,7 +380,7 @@ void loop() {
     // Find the center
 
     bool seenCross = false;
-    while (!seenCross && motor.getLeftDistance() < 0.305) {
+    while (!seenCross && motor.getLeftDistance() < 0.31) {
       float value = (float) lines.read();
       float difference = ((value - 3500) / 7000) * 0.15;
 
@@ -396,8 +398,11 @@ void loop() {
     motor.resetCounters();
     motor.setSpeed(-0.2, -0.2);
     motor.setTargetSpeed(-0.2, -0.2);
-    while(motor.getLeftDistance() <= 0.05) { // Go back an extra 5cm
-      motor.move();
+
+    if(robot.getPosition() != RedButton) {
+      while(motor.getLeftDistance() <= 0.07) { // Go back an extra 5cm
+        motor.move();
+      }
     }
 
     robot.setState(SeekMoleState);
@@ -408,48 +413,73 @@ void loop() {
     // Pivot to correct position
     int curPos = robot.getPosition();
     int nextPos = robot.getTargetPosition();
-    if (curPos > nextPos) {
+
+    bool isRotatingRight = curPos < nextPos;
+    if (isRotatingRight) {
       motor.setTargetSpeed(0.2, -0.2);
       motor.setSpeed(0.2, -0.2);
-    } else if (curPos < nextPos) {
+    } else if (!isRotatingRight) {
       motor.setTargetSpeed(-0.2, 0.2);
       motor.setSpeed(-0.2, 0.2);
     }
 
     float theta = 0.523598776;  // 2 * pi / 12
     float radius = motor.wheelbaseMeters / 2;
-    float linearFactor = 1.05; // May need to increase
-    float maxDistance = ((float) abs(curPos - nextPos)) * theta * radius * linearFactor;
+    float linearFactor = 0;//.95; // May need to increase
+    float maxDistance = ((float) abs(curPos - nextPos)) * theta * radius * linearFactor * 0;
     logger.log("I need to travel %d cm", (int) (maxDistance * 100));
     logger.log("I need to travel from %d to %d", curPos, nextPos);
     // Consider using line sensors for rotation instead
-    while(motor.getLeftDistance() < maxDistance) {
-      motor.move();
+
+    uint16_t* sensorValues = lines.getSensorValues();
+    bool reachedNewLine;
+
+    // If we're already on a line, set it to true so we don't count an extra time
+    if((isRotatingRight && sensorValues[6] > 2300) ||
+      (!isRotatingRight && sensorValues[2] > 2300)) {
+      reachedNewLine = true;
+    } else {
+      reachedNewLine = false;
     }
 
-    while(!lines.hasLine()) {
-      motor.move();
-    }
+    while(motor.getLeftDistance() < maxDistance || motor.getRightDistance() < maxDistance || curPos != nextPos) {
+      sensorValues = lines.getSensorValues();
+      // Check limits
+      if(isRotatingRight) {
+        // logger.log("righto");
+        if(!reachedNewLine && sensorValues[6] > 2300 && sensorValues[2] < 1000) {
+          reachedNewLine = true;
+          curPos++;
+          logger.log("CURPOS:%d NEXTPOS:%d %u %u %u %u %u %u %u %u", curPos, nextPos, sensorValues[0], sensorValues[1], sensorValues[2], sensorValues[3], sensorValues[4], sensorValues[5], sensorValues[6], sensorValues[7]);
 
-    // Pivot to correct position
-    int readValue;
-    do {
-      readValue = lines.read();
-      if(readValue > 3500) {
-        motor.setSpeed(0.2, -0.2);
-        motor.setTargetSpeed(0.2, -0.2);
-      } else {
-        motor.setSpeed(-0.2, 0.2);
-        motor.setTargetSpeed(-0.2, 0.2);
+        }
+        if(reachedNewLine && sensorValues[6] < 1000 && sensorValues[2] > 2300) {
+          reachedNewLine = false;
+        }
+      }
+      
+      if(!isRotatingRight) {
+        // logger.log("lefto");
+        if(!reachedNewLine && sensorValues[6] < 1000 && sensorValues[2] > 2300) {
+          reachedNewLine = true;
+          curPos--;
+        }
+        if(reachedNewLine && sensorValues[6] > 2300 && sensorValues[2] < 1000) {
+          reachedNewLine = false;
+        }
       }
       motor.move();
-    } while(abs(readValue - 3500) > 500);
+    }
 
-    // Alternative: turn until we lose a line
-    // continue until we get 3500~ line reading 
-    // increment or decrement pos
-    // rinse/repeat until we are at the right one
+    motor.resetCounters();
 
+    // // Pivot to line center
+    // int readValue = 0;
+    // while(abs(readValue - 3500) > 500) {
+    //   readValue = lines.read();
+    //   motor.move();
+    // }
+    
     robot.setPosition(nextPos);
 
     while (!digitalRead(FRONT_BUMPER_PIN)) {
