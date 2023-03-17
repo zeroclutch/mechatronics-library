@@ -9,6 +9,9 @@ Robot::Robot(const uint8_t *LED_PINS, uint8_t LED_PIN_COUNT) {
 
   this->LED_PINS = LED_PINS;
   this->LED_PIN_COUNT = LED_PIN_COUNT;
+
+  this->position = RedButton;
+  this->targetPosition = MoleYellow;
 }
 
 Robot::~Robot() {

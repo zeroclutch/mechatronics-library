@@ -42,6 +42,8 @@ class Lines: public RobotModule {
         uint16_t read();
         float getCurrentAngle();
 
+        uint16_t* getSensorValues();
+
         void changePins(bool isFront);
 
 };

@@ -18,8 +18,9 @@ Lines::Lines(uint8_t emitterPin, const uint8_t *pins, uint8_t rearEmitterPin, co
 }
 
 void Lines::changePins(bool isFront) {
+  logger->log("[lines] Changing pins to %s", isFront ? "front" : "rear");
   if(this->isFront == isFront) return;
-  
+
   if(isFront) {
     qtr.setSensorPins(pins, SensorCount);
     qtr.setEmitterPin(emitterPin);
@@ -27,6 +28,8 @@ void Lines::changePins(bool isFront) {
     qtr.setSensorPins(rearPins, SensorCount);
     qtr.setEmitterPin(rearEmitterPin);
   }
+
+  initialize();
 
   this->isFront = isFront;
 }
@@ -78,6 +81,11 @@ bool Lines::calibrate() {
   }
   Serial.println();
   return true;
+}
+
+uint16_t* Lines::getSensorValues() {
+  qtr.read(sensorValues);
+  return &sensorValues[0];
 }
 
 bool Lines::hasLine() {
