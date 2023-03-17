@@ -8,8 +8,8 @@
 #include "module.hpp"
 #include "robot.hpp"
 
-// #define STARTING_STATE SeekLineState
-#define STARTING_STATE SeekButtonState
+#define STARTING_STATE SeekLineState // actual
+// #define STARTING_STATE SeekButtonState // testing only
 
 // Modules
 #include "tcs.hpp"
@@ -97,11 +97,9 @@ Distance distance(
 
 Lines lines(
   EMITTER_PIN,
-  &LINE_PINS[0]);
-
-Lines linesRear(
-  EMITTER_PIN,
-  &LINE_PINS[0]);
+  &LINE_PINS[0],
+  EMITTER_PIN_REAR,
+  &LINE_PINS_REAR[0]);
 
 // Instantiate logger
 Logger logger(
@@ -140,7 +138,6 @@ void loop() {
     // Load all modules
     robot.addModule(&tcsModule, TCSModule);
     robot.addModule(&motor, MotorModule);
-    // robot.addModule(&linesRear, LinesRearModule);
     robot.addModule(&lines, LinesModule);
     robot.addModule(&distance, DistanceModule);
 
@@ -286,7 +283,6 @@ void loop() {
     robot.setState(AlignCoinState);
   } else if (robotState == CoinRightState) {
 
-    // Use PID with distance
     motor.resetCounters();
     float difference = 0.01;
     float leftValue = -0.2 + difference;
@@ -329,7 +325,9 @@ void loop() {
     }
   } else if (robotState == SeekButtonState) {
     motor.resetCounters();
-    while(!linesRear.hasCross() && motor.getLeftDistance() < 0.10) {
+    lines.changePins(LINES_REAR);
+
+    while(!lines.hasCross() && motor.getLeftDistance() < 0.10) {
       motor.setSpeed(0.3, 0.3);
       motor.move();
     }
@@ -351,14 +349,15 @@ void loop() {
 
   } else if (robotState == CenterRobotState) {
     motor.resetCounters();
+    lines.changePins(LINES_REAR);
     // Find the center
-    while (!linesRear.hasCross()) {
-      float value = (float) linesRear.read();
-      float difference = ((value - 3500) / 7000) * 0.2;
+    while (!lines.hasCross()) {
+      float value = (float) lines.read();
+      float difference = ((value - 3500) / 7000) * 0.12;
 
       // float difference = 0;
-      float leftValue = -0.2 + difference;
-      float rightValue = -0.2 - difference;
+      float leftValue = -0.3 + difference;
+      float rightValue = -0.3 - difference;
       motor.setSpeed(leftValue, rightValue);
       motor.setTargetSpeed(leftValue, rightValue);
 
@@ -367,6 +366,7 @@ void loop() {
 
     robot.setState(SeekMoleState);
   } else if (robotState == SeekMoleState) {
+      lines.changePins(LINES_FRONT);
 
     // Pivot to correct position
     int curPos = robot.getPosition();

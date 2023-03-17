@@ -5,13 +5,30 @@ QTRSensors qtr;
 const uint8_t SensorCount = 8;
 uint16_t sensorValues[SensorCount];
 
-Lines::Lines(uint8_t emitterPin, const uint8_t *pins) {
+Lines::Lines(uint8_t emitterPin, const uint8_t *pins, uint8_t rearEmitterPin, const uint8_t *rearPins) {
     name = "Lines";
 
     // configure the sensors
     qtr.setTypeRC();
     qtr.setSensorPins(pins, SensorCount);
     qtr.setEmitterPin(emitterPin);
+
+    this->pins = pins;
+    this->rearPins = rearPins;
+}
+
+void Lines::changePins(bool isFront) {
+  if(this->isFront == isFront) return;
+  
+  if(isFront) {
+    qtr.setSensorPins(pins, SensorCount);
+    qtr.setEmitterPin(emitterPin);
+  } else {
+    qtr.setSensorPins(rearPins, SensorCount);
+    qtr.setEmitterPin(rearEmitterPin);
+  }
+
+  this->isFront = isFront;
 }
 
 bool Lines::initialize() {
