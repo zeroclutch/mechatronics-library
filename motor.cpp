@@ -19,6 +19,8 @@ volatile unsigned long rightCounter = 0;
 const float countsPerRotation = 1687.388889; // for single trigger
 const float circumference = 0.18849556;
 
+const float MAX_SPEED = 1.0; // arbitrary units
+
 const int SPEED_CHECK_INTERVAL = 50000; // 5ms
 volatile float lastLeftDistance = 0;
 volatile float lastRightDistance = 0;
@@ -282,9 +284,9 @@ void Motor::setAllPins() {
 
 int Motor::getPWMValue(uint8_t isEnabled, uint8_t wheel) {
   if(wheel == WHEEL_LEFT) {
-    return (int) (255.0 * isEnabled * fabsf(currentSpeedLeft));
+    return (int) (255.0 * isEnabled * fabsf(currentSpeedLeft * SPEED_CORRECTION_FACTOR));
   } else if(wheel == WHEEL_RIGHT) {
-    return (int) (255.0 * isEnabled * fabsf(currentSpeedRight));
+    return (int) (255.0 * isEnabled * fabsf(currentSpeedRight* SPEED_CORRECTION_FACTOR));
   } else {
     logger->log("[motor] Invalid wheel value: %d", wheel);
     return 0;
@@ -351,10 +353,10 @@ bool Motor::systemsCheck() {
 }
 
 float Motor::clampSpeed(float speed) {
-  if(speed > 1.0) {
-    return 1.0;
-  } else if(speed < -1.0) {
-    return -1.0;
+  if(speed > MAX_SPEED) {
+    return MAX_SPEED;
+  } else if(speed < -MAX_SPEED) {
+    return -MAX_SPEED;
   } 
   return speed;
 }

@@ -71,6 +71,7 @@ class Motor: public RobotModule {
 
     unsigned long lastSpeedUpdate = 0;
     const unsigned int SPEED_UPDATE_INTERVAL = 1000; // 1ms
+    const unsigned int SPEED_CORRECTION_FACTOR = 1.75; // Max speed is now 
 
     void setPins(uint8_t enA, uint8_t in1, uint8_t in2, uint8_t enB, uint8_t in3, uint8_t in4, int state);
     void setAllPins();
