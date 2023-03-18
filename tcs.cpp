@@ -41,8 +41,12 @@ int TCS::getCurrent() {
   // colorTemp = tcs.calculateColorTemperature(r, g, b);
   //   colorTemp = sensor.calculateColorTemperature_dn40(r, g, b, c);
   //   lux = sensor.calculateLux(r, g, b);
+  previousColor = discriminateByColor(r, g, b, c);
+  return previousColor;
+}
 
-  return discriminateByColor(r, g, b, c);
+int TCS::getPreviousColor() {
+    return previousColor;
 }
 
 int TCS::discriminateByColor(int r, int g, int b, int c) {
@@ -69,8 +73,8 @@ int TCS::discriminateByColor(int r, int g, int b, int c) {
 int TCS::getDifference(TCSColor *a, TCSColor *b) {
     float factor = (float) a->c / b->c;
     return (
-        fabsf(a->r - b->r * factor) +
-        fabsf(a->g - b->g * factor) +
-        fabsf(a->b - b->b * factor)
+        fabsf((a->r - b->r) * factor) +
+        fabsf((a->g - b->g) * factor) +
+        fabsf((a->b - b->b) * factor)
     );
 }

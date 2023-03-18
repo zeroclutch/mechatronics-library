@@ -247,8 +247,8 @@ void loop() {
     float difference = 0;
     float increment = 0.001;
     while (!lines.hasLine()) {
-      float leftValue = 0.25 + difference; // typically we want the left slightly quicker
-      float rightValue = 0.25 - difference;
+      float leftValue = 0.3 + difference; // typically we want the left slightly quicker
+      float rightValue = 0.3 - difference;
 
 
       motor.setTargetSpeed(leftValue, rightValue);
@@ -265,11 +265,11 @@ void loop() {
     motor.resetCounters();
     while (!lines.hasCross()) {
       float value = (float)lines.read();
-      float difference = ((value - 3500) / 7000) * 0.17;
+      float difference = ((value - 3500) / 7000) * 0.3;
 
       // float difference = 0;
-      float leftValue = 0.17 + difference;
-      float rightValue = 0.17 - difference;
+      float leftValue = 0.3 + difference;
+      float rightValue = 0.3 - difference;
 
       motor.setSpeed(leftValue, rightValue);
       motor.setTargetSpeed(leftValue, rightValue);
@@ -286,7 +286,7 @@ void loop() {
     }
 
   } else if (robotState == CoinLeftState) {
-    float pivotSpeed = 0.3;
+    float pivotSpeed = 0.32;
     float idleSpeed = 0.05;
     float maxDistance = 0.15;
 
@@ -341,7 +341,7 @@ void loop() {
 
     robot.setState(AlignCoinState);
   } else if (robotState == CoinRightState) {
-    float pivotSpeed = 0.25;
+    float pivotSpeed = 0.32;
     float idleSpeed = 0.05;
     float maxDistance = 0.28;
 
@@ -572,6 +572,8 @@ void loop() {
 
     robot.setState(MoleColorState);
   } else if (robotState == MoleColorState) {
+    delay(150); // Wait 150ms
+
     int color = tcsModule.getCurrent();
     logger.log("Current color: %d", color);
     if (color == TCS_RED) robot.setTargetPosition(MoleRed);

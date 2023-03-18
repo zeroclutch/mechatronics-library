@@ -6,10 +6,13 @@
 #include "module.hpp"
 #endif
 
+#ifndef _TCS34725_H_
+#include "Adafruit_TCS34725.h"
+#endif
+
 #ifndef COLORS_H
 #define COLORS_H
 
-#include "Adafruit_TCS34725.h"
 
 typedef struct TCSCOLOR {
     int r;
@@ -34,9 +37,10 @@ extern enum TCS_COLOR_LIST TCS_Color_List;
 class TCS: public RobotModule {
     private:
 
-        int TCS::discriminateByColor(int r, int g, int b, int c);
-        int TCS::getDifference(TCSColor *a, TCSColor *b);
+        int discriminateByColor(int r, int g, int b, int c);
+        int getDifference(TCSColor *a, TCSColor *b);
 
+        int previousColor;
     public:
         TCS();
         Adafruit_TCS34725 *sensor;
@@ -45,6 +49,7 @@ class TCS: public RobotModule {
         bool systemsCheck();
 
         int getCurrent();
+        int getPreviousColor();
 
 };
 
