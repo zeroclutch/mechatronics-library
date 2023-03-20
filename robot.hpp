@@ -81,6 +81,9 @@ class Robot: public RobotModule {
     const uint8_t *LED_PINS;
     uint8_t LED_PIN_COUNT;
 
+
+    float arenaDistances[7];
+
   public:
     Robot(const uint8_t *LED_PINS, uint8_t LED_PIN_COUNT);
     ~Robot();
@@ -102,6 +105,8 @@ class Robot: public RobotModule {
 
     void nextPosition();
     void previousPosition();
+
+    float distanceFromCenter(int index);
 
     void setLEDs(int state);
 

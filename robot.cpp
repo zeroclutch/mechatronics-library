@@ -12,6 +12,14 @@ Robot::Robot(const uint8_t *LED_PINS, uint8_t LED_PIN_COUNT) {
 
   this->position = RedButton;
   this->targetPosition = MoleYellow;
+  
+  arenaDistances[MoleGreen]  = 0.365;
+  arenaDistances[MoleBlue]   = 0.355;
+  arenaDistances[MoleWhite]  = 0.355;
+  arenaDistances[RedButton]  = 0.310;
+  arenaDistances[MoleRed]    = 0.355;
+  arenaDistances[MolePurple] = 0.355;
+  arenaDistances[MoleYellow] = 0.372;
 }
 
 Robot::~Robot() {
@@ -104,6 +112,10 @@ void Robot::setLEDs(int state) {
   for(int i = 0; i < LED_PIN_COUNT; i++) {
     digitalWrite(LED_PINS[i], ((state >> i) & 0000000001));
   }
+}
+
+float Robot::distanceFromCenter(int index) {
+  return arenaDistances[index];
 }
 
 void Robot::followLine(float averageSpeed, float turnSpeed) {

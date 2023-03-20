@@ -217,29 +217,33 @@ void loop() {
     // Turn left
     motor.resetCounters();
 
-    // Go straight 8cm
-    while (motor.getLeftDistance() < 0.08) {
+    // Go straight 10cm
+    while (motor.getLeftDistance() < 0.10) {
       float value = (float)lines.read();
-      float difference = ((value - 3500) / 7000) * 0.25;
+      float difference = ((value - 3500) / 7000) * 0.4;
 
       // float difference = 0;
-      float leftValue = 0.25 + difference;
-      float rightValue = 0.25 - difference;
+      float leftValue = 0.45 + difference;
+      float rightValue = 0.45 - difference;
 
       motor.move();
     }
 
     motor.resetCounters();
 
+    motor.setTargetSpeed(0, 0.4);
+    motor.setSpeed(0, 0.4);
     while (lines.hasLine() || motor.getRightDistance() < 0.25) {
-      motor.setTargetSpeed(0, 0.25);
-      motor.setSpeed(0, 0.25);
-
       motor.move();
     }
 
-    motor.setTargetSpeed(0.2, 0.2);
-    motor.setSpeed(0.2, 0.2);
+    motor.resetCounters();
+
+    motor.setTargetSpeed(0, 0.4);
+    motor.setSpeed(0, 0.4);
+    while(!lines.hasLine() && motor.getRightDistance() < 0.1) {
+      motor.move();
+    }
 
     robot.setState(AlignCoinState);
   } else if (robotState == AlignCoinState) {
@@ -247,8 +251,8 @@ void loop() {
     float difference = 0;
     float increment = 0.001;
     while (!lines.hasLine()) {
-      float leftValue = 0.3 + difference; // typically we want the left slightly quicker
-      float rightValue = 0.3 - difference;
+      float leftValue = 0.15 + difference; // typically we want the left slightly quicker
+      float rightValue = 0.15 - difference;
 
 
       motor.setTargetSpeed(leftValue, rightValue);
@@ -257,7 +261,7 @@ void loop() {
       motor.move();
 
       difference += increment;
-      if(fabsf(difference) > 0.05) {
+      if(fabsf(difference) > 0.2) {
         increment *= -1;
       }
     }
@@ -268,8 +272,8 @@ void loop() {
       float difference = ((value - 3500) / 7000) * 0.3;
 
       // float difference = 0;
-      float leftValue = 0.3 + difference;
-      float rightValue = 0.3 - difference;
+      float leftValue = 0.35 + difference;
+      float rightValue = 0.35 - difference;
 
       motor.setSpeed(leftValue, rightValue);
       motor.setTargetSpeed(leftValue, rightValue);
@@ -286,10 +290,9 @@ void loop() {
     }
 
   } else if (robotState == CoinLeftState) {
-    float pivotSpeed = 0.32;
+    float pivotSpeed = 0.4;
     float idleSpeed = 0.05;
     float maxDistance = 0.15;
-
 
 
     // Pivot back right
@@ -308,7 +311,7 @@ void loop() {
     }
 
     // Straight back
-    motor.setSpeed(-pivotSpeed - 0.3, -pivotSpeed - 0.3);
+    motor.setSpeed(-pivotSpeed * 2, -pivotSpeed * 2);
     while(!digitalRead(REAR_BUMPER_PIN)) {
       motor.move();
     }
@@ -324,26 +327,17 @@ void loop() {
     }
 
     // Pivot front left
-    motor.resetCounters();
     motor.setSpeed(idleSpeed, pivotSpeed);
     motor.setTargetSpeed(idleSpeed, pivotSpeed);
-    while(motor.getRightDistance() < maxDistance) {
-      motor.move();
-    }
-
-
-    // Go forward
-    motor.setSpeed(pivotSpeed, pivotSpeed);
-    motor.setTargetSpeed(pivotSpeed, pivotSpeed);
-    while(!lines.hasLine()) {
+    while(motor.getRightDistance() < motor.getLeftDistance()) {
       motor.move();
     }
 
     robot.setState(AlignCoinState);
   } else if (robotState == CoinRightState) {
-    float pivotSpeed = 0.32;
+    float pivotSpeed = 0.4;
     float idleSpeed = 0.05;
-    float maxDistance = 0.28;
+    float maxDistance = 0.24;
 
     // Pivot back left
     motor.resetCounters();
@@ -360,7 +354,7 @@ void loop() {
       motor.move();
     }
 
-    motor.setSpeed(-pivotSpeed - 0.3, -pivotSpeed - 0.3);
+    motor.setSpeed(-pivotSpeed * 2, -pivotSpeed * 2);
     while(!digitalRead(REAR_BUMPER_PIN)) {
       motor.move();
     }
@@ -376,17 +370,9 @@ void loop() {
     }
 
     // Pivot back right
-    motor.resetCounters();
     motor.setSpeed(pivotSpeed, idleSpeed);
     motor.setTargetSpeed(pivotSpeed, idleSpeed);
-    while(motor.getLeftDistance() < maxDistance) {
-      motor.move();
-    }
-
-    // Go forward
-    motor.setSpeed(pivotSpeed, pivotSpeed);
-    motor.setTargetSpeed(pivotSpeed, pivotSpeed);
-    while(!lines.hasLine()) {
+    while(motor.getLeftDistance() < motor.getRightDistance()) {
       motor.move();
     }
 
@@ -394,10 +380,10 @@ void loop() {
   } else if (robotState == SeekCrossState) {
     float value = (float) lines.read();
     
-    float difference = ((value - 3500) / 7000) * 0.2;
+    float difference = ((value - 3500) / 7000) * 0.35;
 
-    float leftValue = 0.3 + difference;
-    float rightValue = 0.3 - difference;
+    float leftValue = 0.25 + difference;
+    float rightValue = 0.25 - difference;
 
     motor.setSpeed(leftValue, rightValue);
     motor.setTargetSpeed(leftValue, rightValue);
@@ -412,7 +398,7 @@ void loop() {
     lines.changePins(LINES_REAR);
 
     while(!lines.hasCross() && motor.getLeftDistance() < 0.10) {
-      motor.setSpeed(0.3, 0.3);
+      motor.setSpeed(0.35, 0.35);
       motor.move();
     }
 
@@ -420,10 +406,10 @@ void loop() {
 
     while(!digitalRead(FRONT_BUMPER_PIN)) {
       float value = (float) lines.read();
-      float difference = ((value - 3500) / 7000) * 0.25;
+      float difference = ((value - 3500) / 7000) * 0.35;
 
-      float leftValue = 0.3 + difference;
-      float rightValue = 0.3 - difference;
+      float leftValue = 0.35 + difference;
+      float rightValue = 0.35 - difference;
 
       motor.setSpeed(leftValue, rightValue);
       motor.setTargetSpeed(leftValue, rightValue);
@@ -439,29 +425,16 @@ void loop() {
     // Find the center
 
     bool seenCross = false;
-    while (!seenCross && motor.getLeftDistance() < 0.31) {
-      float value = (float) lines.read();
-      float difference = ((value - 3500) / 7000) * 0.0;
-
-      // float difference = 0;
-      float leftValue = -0.3 + difference;
-      float rightValue = -0.3 - difference;
+    float dist = robot.distanceFromCenter(robot.getPosition());
+    while (!seenCross && motor.getLeftDistance() < dist) {
+      float leftValue = -0.45;
+      float rightValue = -0.45;
       motor.setSpeed(leftValue, rightValue);
       motor.setTargetSpeed(leftValue, rightValue);
 
       motor.move();
 
       seenCross = lines.hasCross() && seenCross;
-    }
-
-    motor.resetCounters();
-    motor.setSpeed(-0.2, -0.2);
-    motor.setTargetSpeed(-0.2, -0.2);
-
-    if(robot.getPosition() != RedButton) {
-      while(motor.getLeftDistance() <= 0.07) { // Go back an extra 7cm
-        motor.move();
-      }
     }
 
     robot.setState(SeekMoleState);
@@ -475,7 +448,7 @@ void loop() {
 
     bool isRotatingRight = curPos < nextPos;
 
-    float pivotSpeed = 0.3;
+    float pivotSpeed = 0.30;
 
     if (isRotatingRight) {
       motor.setTargetSpeed(pivotSpeed, -pivotSpeed);
@@ -488,7 +461,7 @@ void loop() {
     float theta = 0.523598776;  // 2 * pi / 12
     float radius = motor.wheelbaseMeters / 2;
     float linearFactor = 0.95; // May need to increase
-    float maxDistance = ((float) abs(curPos - nextPos)) * theta * radius * linearFactor * 0;
+    float maxDistance = ((float) abs(curPos - nextPos)) * theta * radius * linearFactor;
     logger.log("I need to travel %d cm", (int) (maxDistance * 100));
     logger.log("I need to travel from %d to %d", curPos, nextPos);
     // Consider using line sensors for rotation instead
@@ -560,10 +533,10 @@ void loop() {
 
     while (!digitalRead(FRONT_BUMPER_PIN)) {
       float value = (float)lines.read();
-      float difference = ((value - 3500) / 7000) * 0.13;
+      float difference = ((value - 3500) / 7000) * 0.3;
 
-      float leftValue = 0.37 + difference;
-      float rightValue = 0.37 - difference;
+      float leftValue = 0.4 + difference;
+      float rightValue = 0.4 - difference;
 
       motor.setSpeed(leftValue, rightValue);
       motor.setTargetSpeed(leftValue, rightValue);
@@ -572,7 +545,7 @@ void loop() {
 
     robot.setState(MoleColorState);
   } else if (robotState == MoleColorState) {
-    delay(150); // Wait 150ms
+    delay(300); // Wait 150ms
 
     int color = tcsModule.getCurrent();
     logger.log("Current color: %d", color);
