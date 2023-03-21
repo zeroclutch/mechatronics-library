@@ -11,13 +11,13 @@ Robot::Robot(const uint8_t *LED_PINS, uint8_t LED_PIN_COUNT) {
   this->LED_PIN_COUNT = LED_PIN_COUNT;
 
   this->position = RedButton;
-  this->targetPosition = MoleYellow;
-  
+  this->targetPosition = MoleWhite;
+  // Wall to back wheel when bumper is pressed: 20.6cm (0.206m)
   arenaDistances[MoleGreen]  = 0.365;
-  arenaDistances[MoleBlue]   = 0.355;
-  arenaDistances[MoleWhite]  = 0.355;
-  arenaDistances[RedButton]  = 0.310;
-  arenaDistances[MoleRed]    = 0.355;
+  arenaDistances[MoleBlue]   = 0.365;
+  arenaDistances[MoleWhite]  = 0.365;
+  arenaDistances[RedButton]  = 0.325;
+  arenaDistances[MoleRed]    = 0.36;
   arenaDistances[MolePurple] = 0.355;
   arenaDistances[MoleYellow] = 0.372;
 }

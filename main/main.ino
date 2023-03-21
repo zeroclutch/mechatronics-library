@@ -2,7 +2,7 @@
 #define PERFORM_SYSTEMS_CHECK 0
 
 // Setting this to 0 will mean we only log when logger.dump() is called
-#define DEBUG_TO_SERIAL 1
+#define DEBUG_TO_SERIAL 0
 
 #include "logger.hpp"
 #include "module.hpp"
@@ -74,6 +74,10 @@ const uint8_t LED_PINS[10]{
 
 /** END DEFINE PINS **/
 
+// Speed constants (0.57)
+const float FORWARD_SPEED = 0.48; // should be 0.45
+const float REVERSE_SPEED = -1; // should be -1
+const float PIVOT_SPEED = 0.3; // should be 0.3
 
 // Instantiate modules
 TCS tcsModule;
@@ -427,8 +431,8 @@ void loop() {
     bool seenCross = false;
     float dist = robot.distanceFromCenter(robot.getPosition());
     while (!seenCross && motor.getLeftDistance() < dist) {
-      float leftValue = -0.45;
-      float rightValue = -0.45;
+      float leftValue = REVERSE_SPEED;
+      float rightValue = REVERSE_SPEED;
       motor.setSpeed(leftValue, rightValue);
       motor.setTargetSpeed(leftValue, rightValue);
 
@@ -448,7 +452,7 @@ void loop() {
 
     bool isRotatingRight = curPos < nextPos;
 
-    float pivotSpeed = 0.30;
+    float pivotSpeed = PIVOT_SPEED;
 
     if (isRotatingRight) {
       motor.setTargetSpeed(pivotSpeed, -pivotSpeed);
@@ -533,10 +537,10 @@ void loop() {
 
     while (!digitalRead(FRONT_BUMPER_PIN)) {
       float value = (float)lines.read();
-      float difference = ((value - 3500) / 7000) * 0.3;
+      float difference = ((value - 3500) / 7000) * FORWARD_SPEED * 0.833;
 
-      float leftValue = 0.4 + difference;
-      float rightValue = 0.4 - difference;
+      float leftValue = FORWARD_SPEED + difference;
+      float rightValue = FORWARD_SPEED - difference;
 
       motor.setSpeed(leftValue, rightValue);
       motor.setTargetSpeed(leftValue, rightValue);
