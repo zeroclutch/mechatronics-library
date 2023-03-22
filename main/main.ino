@@ -1,3 +1,5 @@
+#define PARTY_MODE 0
+
 #define DEBUG_ROBOT 0
 #define PERFORM_SYSTEMS_CHECK 0
 
@@ -74,11 +76,20 @@ const uint8_t LED_PINS[10]{
 
 /** END DEFINE PINS **/
 
-// Speed constants (0.57)
+#if !PARTY_MODE
+// Speed constants (0.57 max)
 const float FORWARD_SPEED = 0.48; // should be 0.45
 const float REVERSE_SPEED = -1; // should be -1
 const float PIVOT_SPEED = 0.45; // should be 0.3
 const float PIVOT_SPEED_SLOW = 0.22;
+
+#else
+// Max speed test
+const float FORWARD_SPEED = 0.5; // should be 0.45
+const float REVERSE_SPEED = -1; // should be -1
+const float PIVOT_SPEED = 0.6; // should be 0.3
+const float PIVOT_SPEED_SLOW = 0.3;
+#endif
 
 // Instantiate modules
 TCS tcsModule;
