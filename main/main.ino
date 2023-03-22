@@ -548,7 +548,10 @@ void loop() {
     }
 
     robot.setState(MoleColorState);
+
   } else if (robotState == MoleColorState) {
+    motor.setSpeed(0, 0);
+    motor.move();
     delay(300); // Wait 150ms
 
     int color = tcsModule.getCurrent();
