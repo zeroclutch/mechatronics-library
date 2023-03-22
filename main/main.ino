@@ -77,7 +77,7 @@ const uint8_t LED_PINS[10]{
 // Speed constants (0.57)
 const float FORWARD_SPEED = 0.48; // should be 0.45
 const float REVERSE_SPEED = -1; // should be -1
-const float PIVOT_SPEED = 0.55; // should be 0.3
+const float PIVOT_SPEED = 0.3; // should be 0.3
 
 // Instantiate modules
 TCS tcsModule;
@@ -484,7 +484,6 @@ void loop() {
     bool isReady = curPos != nextPos;
 
     while(motor.getLeftDistance() < maxDistance || motor.getRightDistance() < maxDistance || isReady) {
-
       sensorValues = lines.getSensorValues();
       // Check limits
       if(isRotatingRight) {
@@ -506,19 +505,6 @@ void loop() {
         }
         if(reachedNewLine && sensorValues[6] > 2300 && sensorValues[2] < 1000) {
           reachedNewLine = false;
-        }
-      }
-
-      // Slow down when we approach the target
-      if(abs(curPos - nextPos) <= 1) {
-        pivotSpeed = PIVOT_SPEED / 2;
-
-        if (isRotatingRight) {
-          motor.setTargetSpeed(pivotSpeed, -pivotSpeed);
-          motor.setSpeed(pivotSpeed, -pivotSpeed);
-        } else if (!isRotatingRight) {
-          motor.setTargetSpeed(-pivotSpeed, pivotSpeed);
-          motor.setSpeed(-pivotSpeed, pivotSpeed);
         }
       }
       motor.move();
