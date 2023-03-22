@@ -8,8 +8,8 @@
 #include "module.hpp"
 #include "robot.hpp"
 
-#define STARTING_STATE SeekLineState // actual
-// #define STARTING_STATE SeekButtonState // testing only
+// #define STARTING_STATE SeekLineState // actual
+#define STARTING_STATE SeekButtonState // testing only
 
 // Modules
 #include "tcs.hpp"
@@ -77,7 +77,8 @@ const uint8_t LED_PINS[10]{
 // Speed constants (0.57)
 const float FORWARD_SPEED = 0.48; // should be 0.45
 const float REVERSE_SPEED = -1; // should be -1
-const float PIVOT_SPEED = 0.3; // should be 0.3
+const float PIVOT_SPEED = 0.45; // should be 0.3
+const float PIVOT_SPEED_SLOW = 0.15;
 
 // Instantiate modules
 TCS tcsModule;
@@ -507,6 +508,19 @@ void loop() {
           reachedNewLine = false;
         }
       }
+
+          // Slow down when we approach the target
+       if(abs(curPos - nextPos) <= 1) {
+         pivotSpeed = PIVOT_SPEED_SLOW;
+
+         if (isRotatingRight) {
+           motor.setTargetSpeed(pivotSpeed, -pivotSpeed);
+           motor.setSpeed(pivotSpeed, -pivotSpeed);
+         } else if (!isRotatingRight) {
+           motor.setTargetSpeed(-pivotSpeed, pivotSpeed);
+           motor.setSpeed(-pivotSpeed, pivotSpeed);
+         }
+       }
       motor.move();
 
       // Only complete when sensorValues[3] > 2300. We can also add a check for 4 to get better centering
