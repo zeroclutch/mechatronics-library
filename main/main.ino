@@ -85,10 +85,10 @@ const float PIVOT_SPEED_SLOW = 0.22;
 
 #else
 // Max speed test
-const float FORWARD_SPEED = 0.5; // should be 0.45
+const float FORWARD_SPEED = 0.51; // should be 0.45
 const float REVERSE_SPEED = -1; // should be -1
-const float PIVOT_SPEED = 0.6; // should be 0.3
-const float PIVOT_SPEED_SLOW = 0.3;
+const float PIVOT_SPEED = 1; // should be 0.3
+const float PIVOT_SPEED_SLOW = 0.22;
 #endif
 
 // Instantiate modules
